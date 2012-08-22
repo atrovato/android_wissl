@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+
+    <!-- Main application -->
+    <string name="app_name">wissl</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_player">Wissl</string>
+    <string name="title_activity_main">Wissl</string>
+    <!-- Login -->
+    <string name="user">User</string>
+    <string name="password">Password</string>
+    <string name="login_action">login</string>
+    <!-- Home -->
+    <string name="random">Random</string>
+    <!-- Player -->
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="playing">Playing</string>
+    <string name="play_pause">Play/pause</string>
+    <string name="stop">Stop</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <!-- Playlists -->
+    <string name="playlists">Playlists</string>
+    <string name="play_now">Play now</string>
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="songs">Songs</string>
+    <string name="albums">Albums</string>
+    <string name="artists">Artists</string>
+    <!-- Utils -->
+    <string name="unknown">n.c.</string>
+
+</resources>

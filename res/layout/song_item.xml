@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal" >
+
+    <CheckBox
+        android:id="@android:id/checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:focusable="false"
+        android:onClick="checkItemHandler" />
+
+    <ImageView
+        style="@style/Artwork"
+        android:contentDescription="@+id/artwork" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:duplicateParentState="true"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/Marquee" />
+
+        <TextView
+            android:id="@+id/album"
+            style="@style/SmallMarquee" />
+
+        <TextView
+            android:id="@+id/artist"
+            style="@style/SmallMarquee" />
+    </LinearLayout>
+
+</LinearLayout>
