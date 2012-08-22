@@ -17,24 +17,47 @@ import org.json.JSONObject;
 
 import android.os.AsyncTask;
 import android.util.Log;
-import fr.trovato.wissl.android.IActivity;
+import fr.trovato.wissl.android.OnRemoteResponseListener;
+import fr.trovato.wissl.commons.Parameters;
 
+/**
+ * Class to provide asynchronous request to Wissl server.
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 
-	/** Exception causes application error */
-	private Exception exception;
+	/** MEssage exception causes application error */
+	private String message;
 
-	private int status;
-	private IActivity activity;
+	/** Request status code */
+	private int statusCode;
 
-	public RemoteTask(IActivity activity) {
+	/** Source activity */
+	private OnRemoteResponseListener activity;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param activity
+	 *            Source activity
+	 */
+	public RemoteTask(OnRemoteResponseListener activity) {
 		this.activity = activity;
 	}
 
+	/**
+	 * Constructor used to override this task.
+	 */
 	protected RemoteTask() {
 		super();
 	}
 
+	/**
+	 * Send request to the remote server and get result as a JSON array of JSON
+	 * objet
+	 */
 	@Override
 	protected JSONArray doInBackground(HttpRequestBase... params) {
 		int reqSize = params.length;
@@ -72,16 +95,17 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 					instream.close();
 				}
 
-				this.status = response.getStatusLine().getStatusCode();
+				this.statusCode = response.getStatusLine().getStatusCode();
 
 				Log.d(this.getClass().getSimpleName(), "Response status "
 						+ response.getStatusLine().toString());
 
-				switch (this.status) {
-				case 200:
-					break;
-				default:
-					this.setException(new Exception(json.getString("message")));
+				switch (this.statusCode) {
+					case 200:
+						break;
+					default:
+						this.setException(new Exception(json
+								.getString(Parameters.ERROR.getRequestParam())));
 				}
 			} catch (ClientProtocolException e) {
 				this.setException(e);
@@ -133,27 +157,38 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 	 *            The exception
 	 */
 	protected void setException(Exception e) {
-		if (this.exception == null) {
-			this.exception = e;
+		if (this.message == null) {
+			this.message = e.getMessage();
 		}
 	}
 
 	/**
-	 * Get the exception causing the defect
+	 * Get the exception message causing the defect
 	 * 
-	 * @return The exception or null
+	 * @return The exception message or null
 	 */
-	public Exception getException() {
-		return this.exception;
+	public String getMessage() {
+		return this.message;
 	}
 
+	/**
+	 * Call the <code>onPostExecute</code> method form the
+	 * <code>OnRemoteResponseListener</code>
+	 * 
+	 * @see OnRemoteResponseListener#onPostExecute(JSONArray, int, String)
+	 */
 	@Override
 	public void onPostExecute(JSONArray object) {
-		this.activity.onPostExecute(object);
+		this.activity.onPostExecute(object, this.getStatusCode(), this.message);
 	}
 
-	public int getStatusCode() {
-		return this.status;
+	/**
+	 * Get the request status code
+	 * 
+	 * @return Status code
+	 */
+	protected int getStatusCode() {
+		return this.statusCode;
 	}
 
 }

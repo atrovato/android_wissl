@@ -43,7 +43,12 @@ public class Song extends WisslEntity {
 	private String artistName;
 
 	/**
-	 * {@inheritDoc}
+	 * Build an entity directly from JSON object
+	 * 
+	 * @param json
+	 *            JSON object
+	 * @throws JSONException
+	 *             JSON error
 	 * 
 	 * @see WisslEntity#WisslEntity(JSONObject)
 	 */
@@ -93,23 +98,38 @@ public class Song extends WisslEntity {
 		return json;
 	}
 
-	@Override
-	public String toString() {
-		return this.title;
-	}
-
+	/**
+	 * Get Wissl ID
+	 * 
+	 * @return Wissl ID
+	 */
 	public int getId() {
 		return this.id;
 	}
 
+	/**
+	 * Get the song title.
+	 * 
+	 * @return Song title
+	 */
 	public String getTitle() {
 		return this.title;
 	}
 
+	/**
+	 * Get the album name of the song.
+	 * 
+	 * @return Album name
+	 */
 	public String getAlbumName() {
 		return this.albumName;
 	}
 
+	/**
+	 * Get the artist name of the song.
+	 * 
+	 * @return Artist name
+	 */
 	public String getArtistName() {
 		return this.artistName;
 	}

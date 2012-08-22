@@ -5,9 +5,27 @@
     android:layout_height="fill_parent" >
 
     <TextView
+        android:id="@+id/server_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="@string/server_url" />
+
+    <EditText
+        android:id="@+id/txt_server"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/server_text"
+        android:layout_centerHorizontal="true"
+        android:inputType="text"
+        android:singleLine="true"
+        android:text="@string/server_url_http" />
+
+    <TextView
         android:id="@+id/username_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/txt_server"
         android:layout_centerHorizontal="true"
         android:text="@string/user" />
 

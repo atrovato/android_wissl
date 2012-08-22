@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.commons.data.Album;
+import fr.trovato.wissl.commons.utils.FormatUtil;
 
 public class AlbumAdapter extends AbstractAdapter<Album> {
 
@@ -25,7 +26,9 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 		albumView.setText(currentAlbum.getName());
 		yearView.setText(currentAlbum.getYear());
 		nbSongsView.setText(currentAlbum.getNbSongs());
-		durationView.setText(currentAlbum.getDuration());
+		durationView.setText(FormatUtil.formatDuration(
+				currentAlbum.getDuration(),
+				this.getContext().getString(R.string.unknown)));
 		artistView.setText(currentAlbum.getArtistName());
 	}
 

@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Intent;
-import fr.trovato.wissl.android.AbstractListActivity;
 import fr.trovato.wissl.android.adapter.ArtistAdapter;
 import fr.trovato.wissl.commons.data.Artist;
 import fr.trovato.wissl.commons.data.Song;
@@ -52,7 +51,7 @@ public class ArtistListActivity extends
 	protected void nextPage(Artist entity) {
 		Intent intent = new Intent(this, AlbumListActivity.class);
 		intent.putExtra(AbstractListActivity.ARTIST_ID, entity.getId());
-		this.startActivity(intent);
+		this.startActivityIfNeeded(intent, 0);
 	}
 
 }

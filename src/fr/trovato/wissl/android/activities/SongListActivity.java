@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Intent;
-import fr.trovato.wissl.android.AbstractListActivity;
 import fr.trovato.wissl.android.adapter.SongAdapter;
 import fr.trovato.wissl.commons.data.Song;
 

@@ -11,17 +11,29 @@ public enum Parameters {
 	/** Login parameter, with request */
 	LOGIN("login"),
 
+	/** Username parameter, with request */
+	USERNAME("username"),
+
 	/** Password parameter */
-	PASSWORD,
+	PASSWORD("password"),
 
 	/** Session ID parameter, with request */
 	SESSION_ID("sessionId"),
+
+	/** Error message */
+	ERROR("message"),
+
+	/** Server URL */
+	SERVER_URL,
 
 	/** Preferences parameter */
 	PREFS_NAME;
 
 	/** Parameter used for remote */
 	private String requestParam;
+
+	/** Wissl server enter point */
+	public static final String WISSL_ENTRY_POINT = "wissl";
 
 	/**
 	 * Constructor

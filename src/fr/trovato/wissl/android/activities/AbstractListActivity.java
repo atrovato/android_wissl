@@ -1,4 +1,4 @@
-package fr.trovato.wissl.android;
+package fr.trovato.wissl.android.activities;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -42,8 +42,9 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
-import fr.trovato.wissl.android.activities.LoginActivity;
-import fr.trovato.wissl.android.activities.PlayingSongListActivity;
+import fr.trovato.wissl.android.OnRemoteResponseListener;
+import fr.trovato.wissl.android.LoginActivity;
+import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.adapter.AbstractAdapter;
 import fr.trovato.wissl.android.handlers.PlayerHandler;
 import fr.trovato.wissl.android.services.PlayerService;
@@ -54,7 +55,7 @@ import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.data.WisslEntity;
 
 public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER extends AbstractAdapter<ENTITY>>
-		extends ListActivity implements OnClickListener, IActivity,
+		extends ListActivity implements OnClickListener, OnRemoteResponseListener,
 		OnItemClickListener, ServiceConnection, OnSeekBarChangeListener {
 
 	public final static String ALBUM_ID = "albumId";
@@ -100,8 +101,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		this.dialog.show();
 
 		// Restore preferences
-		this.settings = this.getSharedPreferences(
-				Parameters.PREFS_NAME.name(), 0);
+		this.settings = this.getSharedPreferences(Parameters.PREFS_NAME.name(),
+				0);
 		this.selectedItems = new ArrayList<ENTITY>();
 
 		this.setContentView(R.layout.wissl_list);
@@ -173,51 +174,52 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	@Override
 	public void onClick(View view) {
 		switch (view.getId()) {
-		case R.id.add_to_playlist:
-			final CharSequence[] items = { this.getString(R.string.play_now),
-					"Green", "Blue" };
+			case R.id.add_to_playlist:
+				final CharSequence[] items = {
+						this.getString(R.string.play_now), "Green", "Blue" };
 
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setTitle(R.string.playlists);
-			builder.setSingleChoiceItems(items, -1,
-					new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int item) {
-							switch (item) {
-							case 0:
-								AbstractListActivity.this.playSelectedSongs();
-								break;
+				AlertDialog.Builder builder = new AlertDialog.Builder(this);
+				builder.setTitle(R.string.playlists);
+				builder.setSingleChoiceItems(items, -1,
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int item) {
+								switch (item) {
+									case 0:
+										AbstractListActivity.this
+												.playSelectedSongs();
+										break;
 
-							default:
-								break;
+									default:
+										break;
+								}
 							}
-						}
-					});
-			AlertDialog alert = builder.create();
-			alert.show();
-			break;
-		case R.id.playing:
-			if (this instanceof PlayingSongListActivity) {
-				this.finish();
-			} else {
-				this.showPlaying();
-			}
-			break;
-		case R.id.play:
-			this.play();
-			break;
-		case R.id.stop:
-			this.playButton.setImageResource(R.drawable.play);
-			this.stop();
-			break;
-		case R.id.next:
-			this.playNext();
-			break;
-		case R.id.previous:
-			this.playPrevious();
-			break;
-		default:
-			break;
+						});
+				AlertDialog alert = builder.create();
+				alert.show();
+				break;
+			case R.id.playing:
+				if (this instanceof PlayingSongListActivity) {
+					this.finish();
+				} else {
+					this.showPlaying();
+				}
+				break;
+			case R.id.play:
+				this.play();
+				break;
+			case R.id.stop:
+				this.playButton.setImageResource(R.drawable.play);
+				this.stop();
+				break;
+			case R.id.next:
+				this.playNext();
+				break;
+			case R.id.previous:
+				this.playPrevious();
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -273,8 +275,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	}
 
 	public String getSessionId() {
-		return this.getSettings()
-				.getString(Parameters.SESSION_ID.name(), null);
+		return this.getSettings().getString(Parameters.SESSION_ID.name(), null);
 	}
 
 	/**
@@ -371,7 +372,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		editor.commit();
 
 		Intent myIntent = new Intent(this.getBaseContext(), LoginActivity.class);
-		this.startActivityForResult(myIntent, 0);
+		this.startActivityIfNeeded(myIntent, 0);
 	}
 
 	protected List<Song> getPlayingSongList() {
@@ -447,11 +448,12 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	}
 
 	@Override
-	public final void onPostExecute(JSONArray object) {
-		if (this.remoteTask.getException() != null) {
-			this.showErrorDialog(this.remoteTask.getException().getMessage());
+	public final void onPostExecute(JSONArray object, int statusCode,
+			String errorMessage) {
+		if (statusCode != 200) {
+			this.showErrorDialog(errorMessage);
 
-			if (this.remoteTask.getStatusCode() == 401) {
+			if (statusCode == 401) {
 				this.notLogged();
 			}
 		}

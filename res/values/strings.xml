@@ -7,9 +7,12 @@
     <string name="title_activity_player">Wissl</string>
     <string name="title_activity_main">Wissl</string>
     <!-- Login -->
+    <string name="server_url">Server URL</string>
+    <string name="server_url_http">http://</string>
     <string name="user">User</string>
     <string name="password">Password</string>
     <string name="login_action">login</string>
+    <string name="no_empty_field">Fill all fields please.</string>
     <!-- Home -->
     <string name="random">Random</string>
     <!-- Player -->

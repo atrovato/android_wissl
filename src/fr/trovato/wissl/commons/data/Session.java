@@ -31,7 +31,12 @@ public class Session extends WisslEntity {
 	private Song lastPlayedSong;
 
 	/**
-	 * {@inheritDoc}
+	 * Build an entity directly from JSON object
+	 * 
+	 * @param json
+	 *            JSON object
+	 * @throws JSONException
+	 *             JSON error
 	 * 
 	 * @see WisslEntity#WisslEntity(JSONObject)
 	 */

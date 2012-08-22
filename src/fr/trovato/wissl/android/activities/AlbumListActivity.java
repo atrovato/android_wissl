@@ -12,15 +12,15 @@ import org.json.JSONObject;
 import android.content.Intent;
 import android.net.Uri;
 import android.net.Uri.Builder;
-import fr.trovato.wissl.android.AbstractListActivity;
-import fr.trovato.wissl.android.IRemoteActivity;
+import fr.trovato.wissl.android.OnReceiveRemoteSongListener;
 import fr.trovato.wissl.android.adapter.AlbumAdapter;
 import fr.trovato.wissl.android.tasks.LoadSongsTask;
 import fr.trovato.wissl.commons.data.Album;
 import fr.trovato.wissl.commons.data.Song;
 
 public class AlbumListActivity extends
-		AbstractListActivity<Album, AlbumAdapter> implements IRemoteActivity {
+		AbstractListActivity<Album, AlbumAdapter> implements
+		OnReceiveRemoteSongListener {
 
 	private LoadSongsTask loadSongsTask;
 
@@ -67,7 +67,7 @@ public class AlbumListActivity extends
 	protected void nextPage(Album album) {
 		Intent intent = new Intent(this, SongListActivity.class);
 		intent.putExtra(AbstractListActivity.ALBUM_ID, album.getId());
-		this.startActivity(intent);
+		this.startActivityIfNeeded(intent, 0);
 	}
 
 	public HttpRequestBase[] loadSongs() {
@@ -88,11 +88,11 @@ public class AlbumListActivity extends
 	}
 
 	@Override
-	public void receiveSongs(JSONArray object) {
-		if (this.loadSongsTask.getException() != null) {
-			this.showErrorDialog(this.loadSongsTask.getException().getMessage());
+	public void onReceiveSongs(JSONArray object, int statusCode, String message) {
+		if (statusCode != 200) {
+			this.showErrorDialog(message);
 
-			if (this.loadSongsTask.getStatusCode() == 401) {
+			if (statusCode == 401) {
 				this.notLogged();
 			}
 		}

@@ -40,7 +40,12 @@ public class Album extends WisslEntity {
 	private boolean artwork;
 
 	/**
-	 * {@inheritDoc}
+	 * Build an entity directly from JSON object
+	 * 
+	 * @param json
+	 *            JSON object
+	 * @throws JSONException
+	 *             JSON error
 	 * 
 	 * @see WisslEntity#WisslEntity(JSONObject)
 	 */
@@ -93,26 +98,56 @@ public class Album extends WisslEntity {
 		return this.name;
 	}
 
+	/**
+	 * Get the album name.
+	 * 
+	 * @return Album name
+	 */
 	public String getName() {
 		return this.name;
 	}
 
+	/**
+	 * Get the artist name of the album.
+	 * 
+	 * @return Artist name
+	 */
 	public String getArtistName() {
 		return this.artistName;
 	}
 
+	/**
+	 * Get the year of the album release.
+	 * 
+	 * @return Year of the album release
+	 */
 	public String getYear() {
 		return this.date;
 	}
 
+	/**
+	 * Get the number of songs
+	 * 
+	 * @return Number of songs
+	 */
 	public String getNbSongs() {
 		return Integer.toString(this.songs);
 	}
 
+	/**
+	 * Get global playing duration
+	 * 
+	 * @return Duration
+	 */
 	public int getDuration() {
 		return this.playtime;
 	}
 
+	/**
+	 * Get Wissl ID
+	 * 
+	 * @return Wissl ID
+	 */
 	public int getId() {
 		return this.id;
 	}
