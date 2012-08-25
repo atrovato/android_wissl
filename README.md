@@ -1,7 +1,7 @@
 Wissl for Android
 =============
 
-AWissl allows you to connect to your Wissl application to play your music on your Android device.
+Wissl for Android allows you to connect to your Wissl application to play your music on your Android device.
 
 
 Minimum requirements
@@ -14,7 +14,7 @@ Minimum requirements
 
 License
 -------
-AWissl is Copyright (c) 2012, Alexandre Trovato.
+Wissl for Android is Copyright (c) 2012, Alexandre Trovato.
 
 It is licensed under the GNU General Public License (v3),
 a copy of which can be found in the LICENSE file or at
