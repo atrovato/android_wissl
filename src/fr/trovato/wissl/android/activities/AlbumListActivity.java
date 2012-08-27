@@ -12,44 +12,52 @@ import org.json.JSONObject;
 import android.content.Intent;
 import android.net.Uri;
 import android.net.Uri.Builder;
-import fr.trovato.wissl.android.OnReceiveRemoteSongListener;
 import fr.trovato.wissl.android.adapter.AlbumAdapter;
-import fr.trovato.wissl.android.tasks.LoadSongsTask;
+import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Album;
 import fr.trovato.wissl.commons.data.Song;
 
 public class AlbumListActivity extends
 		AbstractListActivity<Album, AlbumAdapter> implements
-		OnReceiveRemoteSongListener {
-
-	private LoadSongsTask loadSongsTask;
+		OnRemoteResponseListener {
 
 	@Override
 	protected void loadEntities() {
 		Intent intent = this.getIntent();
 
 		if (intent != null) {
-			int artistId = intent.getIntExtra(AbstractListActivity.ARTIST_ID,
-					-1);
+			int artistId = intent
+					.getIntExtra(RemoteAction.ARTIST_ID.name(), -1);
 
 			if (artistId >= 0) {
-				this.get("albums/" + artistId);
+				this.get(RemoteAction.ALBUMS, String.valueOf(artistId));
 			}
 		}
 	}
 
 	@Override
-	protected void next(JSONObject object) throws JSONException {
-		this.getWisslAdapter().clear();
-		List<Album> albumList = new ArrayList<Album>();
+	protected void next(RemoteAction action, JSONObject object)
+			throws JSONException {
+		switch (action) {
+			case ALBUMS:
+				this.getWisslAdapter().clear();
+				List<Album> albumList = new ArrayList<Album>();
 
-		JSONArray albumArray = object.getJSONArray("albums");
+				JSONArray albumArray = object.getJSONArray(RemoteAction.ALBUMS
+						.getRequestParam());
 
-		for (int i = 0; i < albumArray.length(); i++) {
-			albumList.add(new Album(albumArray.getJSONObject(i)));
+				for (int i = 0; i < albumArray.length(); i++) {
+					albumList.add(new Album(albumArray.getJSONObject(i)));
+				}
+
+				this.getWisslAdapter().addAll(albumList);
+				break;
+
+			default:
+				break;
 		}
 
-		this.getWisslAdapter().addAll(albumList);
 	}
 
 	@Override
@@ -66,7 +74,7 @@ public class AlbumListActivity extends
 	@Override
 	protected void nextPage(Album album) {
 		Intent intent = new Intent(this, SongListActivity.class);
-		intent.putExtra(AbstractListActivity.ALBUM_ID, album.getId());
+		intent.putExtra(RemoteAction.ALBUM_ID.name(), album.getId());
 		this.startActivityIfNeeded(intent, 0);
 	}
 
@@ -88,29 +96,7 @@ public class AlbumListActivity extends
 	}
 
 	@Override
-	public void onReceiveSongs(JSONArray object, int statusCode, String message) {
-		if (statusCode != 200) {
-			this.showErrorDialog(message);
-
-			if (statusCode == 401) {
-				this.notLogged();
-			}
-		}
-
-		try {
-			int arraySize = object.length();
-			for (int i = 0; i < arraySize; i++) {
-				JSONObject currentObj = object.getJSONObject(i);
-
-			}
-		} catch (JSONException e) {
-			this.showErrorDialog(e.getMessage());
-		}
-	}
-
-	@Override
-	protected void playSelectedSongs() {
-		this.loadSongsTask = (LoadSongsTask) new LoadSongsTask(this)
-				.execute(this.loadSongs());
+	protected void addSelectedToPlaylist() {
+		this.get(RemoteAction.LOAD_PLAYLISTS, null);
 	}
 }

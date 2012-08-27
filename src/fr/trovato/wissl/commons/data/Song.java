@@ -76,29 +76,6 @@ public class Song extends WisslEntity {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * 
-	 * @see WisslEntity#toJSON()
-	 */
-	@Override
-	public JSONObject toJSON() throws JSONException {
-		JSONObject json = new JSONObject();
-
-		json.accumulate("id", this.id);
-		json.accumulate("title", this.title);
-		json.accumulate("position", this.position);
-		json.accumulate("disc_no", this.discNumber);
-		json.accumulate("duration", this.duration);
-		json.accumulate("format", this.format);
-		json.accumulate("album_id", this.albumId);
-		json.accumulate("album_name", this.albumName);
-		json.accumulate("artist_id", this.artistId);
-		json.accumulate("artist_name", this.artistName);
-
-		return json;
-	}
-
-	/**
 	 * Get Wissl ID
 	 * 
 	 * @return Wissl ID
@@ -132,6 +109,60 @@ public class Song extends WisslEntity {
 	 */
 	public String getArtistName() {
 		return this.artistName;
+	}
+
+	/**
+	 * Get the song position into its album
+	 * 
+	 * @return Song position
+	 */
+	public int getPosition() {
+		return this.position;
+	}
+
+	/**
+	 * Get disc number when multiple volumes
+	 * 
+	 * @return Disc number
+	 */
+	public int getDiscNumber() {
+		return this.discNumber;
+	}
+
+	/**
+	 * Get song duration in seconds
+	 * 
+	 * @return Song duration in seconds
+	 */
+	public int getDuration() {
+		return this.duration;
+	}
+
+	/**
+	 * Get audio mimetype, ie 'audio/mp3'
+	 * 
+	 * @return Audio mimetype
+	 */
+	public String getFormat() {
+		return this.format;
+	}
+
+	/**
+	 * Get the album Wissl ID.
+	 * 
+	 * @return Album Wissl ID
+	 */
+	public int getAlbumId() {
+		return this.albumId;
+	}
+
+	/**
+	 * Get the artist Wissl ID.
+	 * 
+	 * @return Artist Wissl ID
+	 */
+	public int getArtistId() {
+		return this.artistId;
 	}
 
 }

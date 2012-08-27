@@ -17,8 +17,8 @@ import org.json.JSONObject;
 
 import android.os.AsyncTask;
 import android.util.Log;
-import fr.trovato.wissl.android.OnRemoteResponseListener;
-import fr.trovato.wissl.commons.Parameters;
+import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
+import fr.trovato.wissl.android.remote.RemoteAction;
 
 /**
  * Class to provide asynchronous request to Wissl server.
@@ -37,13 +37,19 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 	/** Source activity */
 	private OnRemoteResponseListener activity;
 
+	/** Remote action */
+	private RemoteAction remoteAction;
+
 	/**
 	 * Constructor.
 	 * 
+	 * @param action
+	 *            Remote action to apply
 	 * @param activity
 	 *            Source activity
 	 */
-	public RemoteTask(OnRemoteResponseListener activity) {
+	public RemoteTask(RemoteAction action, OnRemoteResponseListener activity) {
+		this.remoteAction = action;
 		this.activity = activity;
 	}
 
@@ -104,8 +110,9 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 					case 200:
 						break;
 					default:
-						this.setException(new Exception(json
-								.getString(Parameters.ERROR.getRequestParam())));
+						this.setException(new Exception(
+								json.getString(RemoteAction.ERROR
+										.getRequestParam())));
 				}
 			} catch (ClientProtocolException e) {
 				this.setException(e);
@@ -175,11 +182,13 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 	 * Call the <code>onPostExecute</code> method form the
 	 * <code>OnRemoteResponseListener</code>
 	 * 
-	 * @see OnRemoteResponseListener#onPostExecute(JSONArray, int, String)
+	 * @see OnRemoteResponseListener#onPostExecute(RemoteAction, JSONArray, int,
+	 *      String)
 	 */
 	@Override
 	public void onPostExecute(JSONArray object) {
-		this.activity.onPostExecute(object, this.getStatusCode(), this.message);
+		this.activity.onPostExecute(this.remoteAction, object,
+				this.getStatusCode(), this.message);
 	}
 
 	/**

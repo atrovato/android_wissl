@@ -28,6 +28,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.Uri.Builder;
 import android.os.Bundle;
@@ -42,56 +44,86 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
-import fr.trovato.wissl.android.OnRemoteResponseListener;
 import fr.trovato.wissl.android.LoginActivity;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.adapter.AbstractAdapter;
 import fr.trovato.wissl.android.handlers.PlayerHandler;
+import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
+import fr.trovato.wissl.android.remote.Parameters;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.android.services.PlayerService;
 import fr.trovato.wissl.android.services.PlayerService.PlayerBinder;
 import fr.trovato.wissl.android.tasks.RemoteTask;
-import fr.trovato.wissl.commons.Parameters;
+import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.data.WisslEntity;
 
+/**
+ * Abstract class used for each activity to unify every processing.
+ * 
+ * @author Alexandre Trovato
+ * 
+ * @param <ENTITY>
+ *            Entity to manage
+ * @param <ADAPTER>
+ *            Adapter used to display entities
+ */
 public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER extends AbstractAdapter<ENTITY>>
-		extends ListActivity implements OnClickListener, OnRemoteResponseListener,
-		OnItemClickListener, ServiceConnection, OnSeekBarChangeListener {
+		extends ListActivity implements OnClickListener,
+		OnRemoteResponseListener, OnItemClickListener, ServiceConnection,
+		OnSeekBarChangeListener {
 
-	public final static String ALBUM_ID = "albumId";
-
-	public static final String ARTIST_ID = "artistId";
-
-	/** URL of the server */
-	private final String SERVER_URI = "192.168.1.4:8080";
+	/** Wissl server URL */
+	private String serverUrl;
 
 	/** Background service playing music */
 	private PlayerService playerService;
-	boolean playerServiceBound = false;
+	/** Background service playing music enable flag */
+	private boolean playerServiceBound = false;
 
+	/** Add to playlist button */
 	private ImageButton addToPlaylistButton;
+	/** Playing playlist button */
 	private ImageButton playingButton;
+	/** Play button */
 	private ImageButton playButton;
+	/** Stop button */
 	private ImageButton stopButton;
+	/** Previous button */
 	private ImageButton previousButton;
+	/** Next button */
 	private ImageButton nextButton;
-	private SeekBar progressBar;
+	/** Seek bar */
+	private SeekBar seekBar;
 
 	/** Activity settings */
 	private SharedPreferences settings;
 
+	/** Background remote task */
 	private RemoteTask remoteTask;
 
+	/** List of selected entities */
 	private List<ENTITY> selectedItems;
 
+	/** Add songs to playlist dialog */
 	private ProgressDialog dialog;
 
+	/** Playlists */
+	private List<Playlist> playlists;
+
+	/** Handler to display player status */
 	private PlayerHandler playerHandler;
 
+	/** Current Wissl entities list adapter */
 	private ADAPTER listAdapter;
 
+	private AlertDialog playlistDialog;
+
+	/**
+	 * Load settings and prepare player interface
+	 */
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		this.dialog = new ProgressDialog(this);
@@ -103,7 +135,16 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		// Restore preferences
 		this.settings = this.getSharedPreferences(Parameters.PREFS_NAME.name(),
 				0);
+
+		this.serverUrl = this.getSettings().getString(
+				Parameters.SERVER_URL.name(), null);
+
+		if (this.getSessionId() == null) {
+			this.notLogged();
+		}
+
 		this.selectedItems = new ArrayList<ENTITY>();
+		this.playlists = new ArrayList<Playlist>();
 
 		this.setContentView(R.layout.wissl_list);
 
@@ -138,19 +179,29 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		this.previousButton.setOnClickListener(this);
 		this.previousButton.setEnabled(false);
 
-		this.progressBar = (SeekBar) this.findViewById(R.id.seeker);
-		this.progressBar.setOnSeekBarChangeListener(this);
-		this.progressBar.setEnabled(false);
+		this.seekBar = (SeekBar) this.findViewById(R.id.seeker);
+		this.seekBar.setOnSeekBarChangeListener(this);
+		this.seekBar.setEnabled(false);
 
-		this.playerHandler = new PlayerHandler(this.progressBar,
-				this.playButton, this.stopButton, this.nextButton,
-				this.previousButton, this.playingButton);
+		this.playerHandler = new PlayerHandler(this.seekBar, this.playButton,
+				this.stopButton, this.nextButton, this.previousButton,
+				this.playingButton);
 
-		this.loadEntities();
+		ConnectivityManager connMgr = (ConnectivityManager) this
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+		if (networkInfo != null && networkInfo.isConnected()) {
+			this.loadEntities();
+		} else {
+			this.showErrorDialog(this.getString(R.string.no_connection));
+		}
 	}
 
+	/**
+	 * Bind player service
+	 */
 	@Override
-	public void onStart() {
+	protected void onStart() {
 		super.onStart();
 
 		Intent playerIntent = new Intent(this, PlayerService.class);
@@ -160,8 +211,11 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		this.bindService(playerIntent, this, Context.BIND_AUTO_CREATE);
 	}
 
+	/**
+	 * Unbind player service
+	 */
 	@Override
-	public void onStop() {
+	protected void onStop() {
 		super.onStop();
 
 		// Unbind from the service
@@ -175,28 +229,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	public void onClick(View view) {
 		switch (view.getId()) {
 			case R.id.add_to_playlist:
-				final CharSequence[] items = {
-						this.getString(R.string.play_now), "Green", "Blue" };
-
-				AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setTitle(R.string.playlists);
-				builder.setSingleChoiceItems(items, -1,
-						new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int item) {
-								switch (item) {
-									case 0:
-										AbstractListActivity.this
-												.playSelectedSongs();
-										break;
-
-									default:
-										break;
-								}
-							}
-						});
-				AlertDialog alert = builder.create();
-				alert.show();
+				this.getPlaylists();
 				break;
 			case R.id.playing:
 				if (this instanceof PlayingSongListActivity) {
@@ -223,7 +256,15 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		}
 	}
 
-	protected void playSelectedSongs() {
+	private void getPlaylists() {
+		new RemoteTask(RemoteAction.LOAD_PLAYLISTS, null);
+	}
+
+	private void showPlaylists(CharSequence[] items) {
+		this.playlistDialog.show();
+	}
+
+	protected void addSelectedToPlaylist() {
 		int nbAdded = 0;
 
 		AbstractListActivity.this.clearPlaying();
@@ -275,7 +316,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	}
 
 	public String getSessionId() {
-		return this.getSettings().getString(Parameters.SESSION_ID.name(), null);
+		return this.getSettings().getString(
+				RemoteAction.SESSION_ID.getRequestParam(), null);
 	}
 
 	/**
@@ -284,7 +326,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 * @returnThe server URL
 	 */
 	public String getServerUrl() {
-		return "http://" + this.SERVER_URI + "/wissl";
+		return this.serverUrl + "/wissl";
 	}
 
 	/**
@@ -293,8 +335,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 * @param uri
 	 *            Request URI
 	 */
-	public void post(String uri) {
-		this.post(uri, new HashMap<String, String>(1));
+	public void post(RemoteAction action, String uri) {
+		this.post(action, uri, new HashMap<String, String>(1));
 	}
 
 	public void showPlaying() {
@@ -310,7 +352,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 * @param params
 	 *            Parameters to send
 	 */
-	public void post(String uri, Map<String, String> params) {
+	public void post(RemoteAction action, String uri, Map<String, String> params) {
 		try {
 			List<NameValuePair> paramList = new ArrayList<NameValuePair>();
 
@@ -328,7 +370,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 			HttpPost request = new HttpPost(this.getServerUrl() + "/" + uri);
 			request.setEntity(entity);
 
-			this.connect(request);
+			this.connect(action, request);
 		} catch (UnsupportedEncodingException e) {
 			this.showErrorDialog(e.getMessage());
 		}
@@ -340,22 +382,26 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 * @param uri
 	 *            Request URI
 	 */
-	public void get(String uri) {
-		Uri sessionUri = Uri.parse(this.getServerUrl() + "/" + uri);
+	public void get(RemoteAction action, String suffix) {
+		Uri sessionUri = Uri.parse(this.getServerUrl() + "/"
+				+ action.getRequestParam()
+				+ (suffix != null ? "/" + suffix : ""));
 		Builder uriBuilder = sessionUri.buildUpon();
-		uriBuilder.appendQueryParameter("sessionId", this.getSessionId());
+		uriBuilder.appendQueryParameter(
+				RemoteAction.SESSION_ID.getRequestParam(), this.getSessionId());
 
-		this.connect(new HttpGet(uriBuilder.build().toString()));
+		this.connect(action, new HttpGet(uriBuilder.build().toString()));
 	}
 
-	private void connect(HttpRequestBase request) {
-		this.remoteTask = new RemoteTask(this);
+	private void connect(RemoteAction action, HttpRequestBase request) {
+		this.remoteTask = new RemoteTask(action, this);
 		this.remoteTask.execute(request);
 	}
 
 	public void showErrorDialog(String message) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(message).setNeutralButton("Ok",
+		builder.setMessage(message).setNeutralButton(
+				this.getString(R.string.ok),
 				new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int id) {
@@ -368,7 +414,7 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 
 	public void notLogged() {
 		SharedPreferences.Editor editor = this.getSettings().edit();
-		editor.remove(Parameters.SESSION_ID.name());
+		editor.remove(RemoteAction.SESSION_ID.getRequestParam());
 		editor.commit();
 
 		Intent myIntent = new Intent(this.getBaseContext(), LoginActivity.class);
@@ -448,8 +494,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	}
 
 	@Override
-	public final void onPostExecute(JSONArray object, int statusCode,
-			String errorMessage) {
+	public final void onPostExecute(RemoteAction action, JSONArray jsonArray,
+			int statusCode, String errorMessage) {
 		if (statusCode != 200) {
 			this.showErrorDialog(errorMessage);
 
@@ -459,9 +505,57 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		}
 
 		try {
-			int arraySize = object.length();
+			int arraySize = jsonArray.length();
 			for (int i = 0; i < arraySize; i++) {
-				this.next(object.getJSONObject(i));
+				switch (action) {
+					case LOAD_PLAYLISTS:
+						if (this.playlists.isEmpty()) {
+							JSONObject object = jsonArray.getJSONObject(i);
+
+							JSONArray albumArray = object
+									.getJSONArray(RemoteAction.LOAD_PLAYLISTS
+											.getRequestParam());
+							int nbAlbums = albumArray.length();
+
+							CharSequence[] playlists = new CharSequence[nbAlbums];
+
+							for (int j = 0; j < nbAlbums; j++) {
+								Playlist playlist = new Playlist(
+										albumArray.getJSONObject(j));
+
+								this.playlists.add(playlist);
+
+								playlists[j] = playlist.getPlaylistName();
+							}
+
+							AlertDialog.Builder builder = new AlertDialog.Builder(
+									this);
+							builder.setTitle(R.string.playlists);
+							builder.setSingleChoiceItems(playlists, -1,
+									new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(
+												DialogInterface dialog, int item) {
+											switch (item) {
+												case 0:
+													AbstractListActivity.this
+															.addSelectedToPlaylist();
+													break;
+
+												default:
+													break;
+											}
+										}
+									});
+							this.playlistDialog = builder.create();
+						}
+
+						this.playlistDialog.show();
+						break;
+					default:
+						this.next(action, jsonArray.getJSONObject(i));
+						break;
+				}
 			}
 
 			this.stopWaiting();
@@ -470,7 +564,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		}
 	}
 
-	protected abstract void next(JSONObject object) throws JSONException;
+	protected abstract void next(RemoteAction action, JSONObject object)
+			throws JSONException;
 
 	protected abstract ADAPTER buildAdapter();
 

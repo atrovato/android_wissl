@@ -1,4 +1,4 @@
-package fr.trovato.wissl.commons;
+package fr.trovato.wissl.android.remote;
 
 /**
  * Parameters used to rely application and server side.
@@ -6,7 +6,7 @@ package fr.trovato.wissl.commons;
  * @author alexandre.trovato@gmail.com
  * 
  */
-public enum Parameters {
+public enum RemoteAction {
 
 	/** Login parameter, with request */
 	LOGIN("login"),
@@ -23,11 +23,26 @@ public enum Parameters {
 	/** Error message */
 	ERROR("message"),
 
-	/** Server URL */
-	SERVER_URL,
+	/** Album ID */
+	ALBUM_ID("albumId"),
 
-	/** Preferences parameter */
-	PREFS_NAME;
+	/** Artist ID */
+	ARTIST_ID("artistId"),
+
+	/** Albums */
+	ALBUMS("albums"),
+
+	/** Artists */
+	ARTISTS("artists"),
+
+	/** Artist */
+	ARTIST("artist"),
+
+	/** Songs */
+	SONGS("songs"),
+
+	/** Load playlists action */
+	LOAD_PLAYLISTS("playlists");
 
 	/** Parameter used for remote */
 	private String requestParam;
@@ -41,14 +56,8 @@ public enum Parameters {
 	 * @param requestParam
 	 *            Parameter used for remote
 	 */
-	private Parameters(String requestParam) {
+	private RemoteAction(String requestParam) {
 		this.requestParam = requestParam;
-	}
-
-	/**
-	 * Empty constructor
-	 */
-	private Parameters() {
 	}
 
 	/**

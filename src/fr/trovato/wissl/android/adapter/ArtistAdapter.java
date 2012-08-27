@@ -40,11 +40,11 @@ public class ArtistAdapter extends AbstractAdapter<Artist> {
 
 		// Number of albums
 		textView = (TextView) rowView.findViewById(R.id.nb_albums);
-		textView.setText(currentArtist.getNbAlbums());
+		textView.setText(String.valueOf(currentArtist.getNbAlbums()));
 
 		// Number of songs
 		textView = (TextView) rowView.findViewById(R.id.nb_songs);
-		textView.setText(currentArtist.getNbSongs());
+		textView.setText(String.valueOf(currentArtist.getNbSongs()));
 
 		// Global playing time
 		textView = (TextView) rowView.findViewById(R.id.duration);

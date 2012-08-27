@@ -72,33 +72,6 @@ public class Album extends WisslEntity {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * 
-	 * @see WisslEntity#toJSON()
-	 */
-	@Override
-	public JSONObject toJSON() throws JSONException {
-		JSONObject json = new JSONObject();
-
-		json.accumulate("id", this.id);
-		json.accumulate("name", this.name);
-		json.accumulate("artist", this.artist);
-		json.accumulate("artist_name", this.artistName);
-		json.accumulate("date", this.date);
-		json.accumulate("genre", this.genre);
-		json.accumulate("songs", this.songs);
-		json.accumulate("playtime", this.playtime);
-		json.accumulate("artwork", this.artwork);
-
-		return json;
-	}
-
-	@Override
-	public String toString() {
-		return this.name;
-	}
-
-	/**
 	 * Get the album name.
 	 * 
 	 * @return Album name
@@ -117,6 +90,15 @@ public class Album extends WisslEntity {
 	}
 
 	/**
+	 * Get the artist Wissl ID
+	 * 
+	 * @return Artist Wissl ID
+	 */
+	public int getArtistId() {
+		return this.artist;
+	}
+
+	/**
 	 * Get the year of the album release.
 	 * 
 	 * @return Year of the album release
@@ -130,8 +112,8 @@ public class Album extends WisslEntity {
 	 * 
 	 * @return Number of songs
 	 */
-	public String getNbSongs() {
-		return Integer.toString(this.songs);
+	public int getNbSongs() {
+		return this.songs;
 	}
 
 	/**
@@ -151,4 +133,23 @@ public class Album extends WisslEntity {
 	public int getId() {
 		return this.id;
 	}
+
+	/**
+	 * Get genre
+	 * 
+	 * @return Album genre
+	 */
+	public String getGenre() {
+		return this.genre;
+	}
+
+	/**
+	 * Has artwork ?
+	 * 
+	 * @return TRUE if album has an artwork
+	 */
+	public boolean hasArtwork() {
+		return this.artwork;
+	}
+
 }

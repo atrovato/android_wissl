@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import android.content.Intent;
 import fr.trovato.wissl.android.adapter.ArtistAdapter;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Artist;
 import fr.trovato.wissl.commons.data.Song;
 
@@ -16,19 +17,30 @@ public class ArtistListActivity extends
 		AbstractListActivity<Artist, ArtistAdapter> {
 
 	@Override
-	protected void next(JSONObject object) throws JSONException {
-		this.getWisslAdapter().clear();
+	protected void next(RemoteAction action, JSONObject object)
+			throws JSONException {
+		switch (action) {
+			case ARTISTS:
+				this.getWisslAdapter().clear();
 
-		List<Artist> artistList = new ArrayList<Artist>();
+				List<Artist> artistList = new ArrayList<Artist>();
 
-		JSONArray artists = object.getJSONArray("artists");
+				JSONArray artists = object.getJSONArray(RemoteAction.ARTISTS
+						.getRequestParam());
 
-		for (int i = 0; i < artists.length(); i++) {
-			JSONObject obj = artists.getJSONObject(i);
-			artistList.add(new Artist(obj.getJSONObject("artist")));
+				for (int i = 0; i < artists.length(); i++) {
+					JSONObject obj = artists.getJSONObject(i);
+					artistList.add(new Artist(obj
+							.getJSONObject(RemoteAction.ARTIST
+									.getRequestParam())));
+				}
+
+				this.getWisslAdapter().addAll(artistList);
+				break;
+			default:
+				break;
 		}
 
-		this.getWisslAdapter().addAll(artistList);
 	}
 
 	@Override
@@ -44,13 +56,13 @@ public class ArtistListActivity extends
 
 	@Override
 	protected void loadEntities() {
-		this.get("artists");
+		this.get(RemoteAction.ARTISTS, null);
 	}
 
 	@Override
 	protected void nextPage(Artist entity) {
 		Intent intent = new Intent(this, AlbumListActivity.class);
-		intent.putExtra(AbstractListActivity.ARTIST_ID, entity.getId());
+		intent.putExtra(RemoteAction.ARTIST_ID.name(), entity.getId());
 		this.startActivityIfNeeded(intent, 0);
 	}
 

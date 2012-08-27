@@ -52,20 +52,39 @@ public class User extends WisslEntity {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Get Wissl ID
 	 * 
-	 * @see WisslEntity#toJSON()
+	 * @return Wissl ID
 	 */
-	@Override
-	public JSONObject toJSON() throws JSONException {
-		JSONObject json = new JSONObject();
+	public int getId() {
+		return this.id;
+	}
 
-		json.accumulate("id", this.id);
-		json.accumulate("username", this.username);
-		json.accumulate("auth", this.auth);
-		json.accumulate("dowloaded", this.dowloaded);
+	/**
+	 * Get user name
+	 * 
+	 * @return User name
+	 */
+	public String getUsername() {
+		return this.username;
+	}
 
-		return json;
+	/**
+	 * Get user authorization
+	 * 
+	 * @return User authorization
+	 */
+	public int getAuth() {
+		return this.auth;
+	}
+
+	/**
+	 * Get total number of bytes downloaded
+	 * 
+	 * @return Total number of bytes downloaded
+	 */
+	public int getDownloaded() {
+		return this.dowloaded;
 	}
 
 }

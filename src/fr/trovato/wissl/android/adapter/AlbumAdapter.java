@@ -25,7 +25,7 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 
 		albumView.setText(currentAlbum.getName());
 		yearView.setText(currentAlbum.getYear());
-		nbSongsView.setText(currentAlbum.getNbSongs());
+		nbSongsView.setText(String.valueOf(currentAlbum.getNbSongs()));
 		durationView.setText(FormatUtil.formatDuration(
 				currentAlbum.getDuration(),
 				this.getContext().getString(R.string.unknown)));

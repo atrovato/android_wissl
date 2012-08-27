@@ -23,14 +23,18 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import fr.trovato.wissl.android.activities.ArtistListActivity;
+import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
+import fr.trovato.wissl.android.remote.Parameters;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.android.tasks.RemoteTask;
-import fr.trovato.wissl.commons.Parameters;
 
 /**
  * Android activity to log on the application.
@@ -38,8 +42,8 @@ import fr.trovato.wissl.commons.Parameters;
  * @author alexandre.trovato@gmail.com
  * 
  */
-public class LoginActivity extends Activity implements OnRemoteResponseListener,
-		OnClickListener {
+public class LoginActivity extends Activity implements
+		OnRemoteResponseListener, OnClickListener {
 
 	/** Activity settings */
 	private SharedPreferences preferences;
@@ -55,6 +59,13 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 	 */
 	@Override
 	protected void onCreate(Bundle icicle) {
+		ConnectivityManager connMgr = (ConnectivityManager) this
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+		if (networkInfo == null || !networkInfo.isConnected()) {
+			this.showErrorDialog(this.getString(R.string.no_connection));
+		}
+
 		super.onCreate(icicle);
 
 		// Restore preferences
@@ -63,7 +74,7 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 
 		// Restore session ID or null
 		String sessionId = this.getSharedPreferences().getString(
-				Parameters.SESSION_ID.name(), null);
+				RemoteAction.SESSION_ID.getRequestParam(), null);
 
 		if (sessionId != null) {
 			this.authenticate(sessionId);
@@ -83,11 +94,11 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 
 		formEditText = (EditText) this.findViewById(R.id.txt_username);
 		formEditText.setText(this.getSharedPreferences().getString(
-				Parameters.USERNAME.name(), null));
+				RemoteAction.USERNAME.getRequestParam(), null));
 
 		formEditText = (EditText) this.findViewById(R.id.txt_password);
 		formEditText.setText(this.getSharedPreferences().getString(
-				Parameters.PASSWORD.name(), null));
+				RemoteAction.PASSWORD.getRequestParam(), null));
 	}
 
 	/**
@@ -114,17 +125,19 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 				&& usernameValue.trim().length() > 0
 				&& passwordValue.trim().length() > 0) {
 			Map<String, String> params = new HashMap<String, String>();
-			params.put(Parameters.USERNAME.getRequestParam(), usernameValue);
-			params.put(Parameters.PASSWORD.getRequestParam(), passwordValue);
+			params.put(RemoteAction.USERNAME.getRequestParam(), usernameValue);
+			params.put(RemoteAction.PASSWORD.getRequestParam(), passwordValue);
 
-			this.post(serverUrlValue + "/" + Parameters.WISSL_ENTRY_POINT + "/"
-					+ Parameters.LOGIN.getRequestParam(), params);
+			this.post(serverUrlValue + "/" + RemoteAction.WISSL_ENTRY_POINT
+					+ "/" + RemoteAction.LOGIN.getRequestParam(), params);
 
 			SharedPreferences.Editor editor = this.getSharedPreferences()
 					.edit();
 			editor.putString(Parameters.SERVER_URL.name(), serverUrlValue);
-			editor.putString(Parameters.USERNAME.name(), usernameValue);
-			editor.putString(Parameters.PASSWORD.name(), passwordValue);
+			editor.putString(RemoteAction.USERNAME.getRequestParam(),
+					usernameValue);
+			editor.putString(RemoteAction.PASSWORD.getRequestParam(),
+					passwordValue);
 			editor.commit();
 		} else {
 			this.showErrorDialog(this.getString(R.string.no_empty_field));
@@ -135,18 +148,26 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 	 * Decode received response and enter the application
 	 */
 	@Override
-	public void onPostExecute(JSONArray object, int statusCode,
-			String errorMessage) {
+	public void onPostExecute(RemoteAction action, JSONArray object,
+			int statusCode, String errorMessage) {
 		if (statusCode != 200) {
 			this.showErrorDialog(errorMessage);
 		}
 
 		try {
 			JSONObject json = object.getJSONObject(0);
-			String sessionId = json.getString(Parameters.SESSION_ID
-					.getRequestParam());
 
-			this.authenticate(sessionId);
+			switch (action) {
+				case LOGIN:
+					String sessionId = json.getString(RemoteAction.SESSION_ID
+							.getRequestParam());
+
+					this.authenticate(sessionId);
+					break;
+				default:
+					break;
+			}
+
 		} catch (JSONException e) {
 			this.showErrorDialog(e.getMessage());
 		}
@@ -162,7 +183,8 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 		if (sessionId != null) {
 			SharedPreferences.Editor editor = this.getSharedPreferences()
 					.edit();
-			editor.putString(Parameters.SESSION_ID.name(), sessionId);
+			editor.putString(RemoteAction.SESSION_ID.getRequestParam(),
+					sessionId);
 			editor.commit();
 
 			Intent intent = new Intent(this, ArtistListActivity.class);
@@ -186,7 +208,7 @@ public class LoginActivity extends Activity implements OnRemoteResponseListener,
 	 *            Request to send
 	 */
 	private void connect(HttpRequestBase request) {
-		new RemoteTask(this).execute(request);
+		new RemoteTask(RemoteAction.LOGIN, this).execute(request);
 	}
 
 	/**

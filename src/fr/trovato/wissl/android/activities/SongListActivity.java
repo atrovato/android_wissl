@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import android.content.Intent;
 import fr.trovato.wissl.android.adapter.SongAdapter;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Song;
 
 public class SongListActivity extends AbstractListActivity<Song, SongAdapter> {
@@ -18,24 +19,29 @@ public class SongListActivity extends AbstractListActivity<Song, SongAdapter> {
 		Intent intent = this.getIntent();
 
 		if (intent != null) {
-			int albumId = intent.getIntExtra(AbstractListActivity.ALBUM_ID, -1);
+			int albumId = intent.getIntExtra(RemoteAction.ALBUM_ID.name(), -1);
 
 			if (albumId >= 0) {
-				this.get("songs/" + albumId);
+				this.get(RemoteAction.SONGS, String.valueOf(albumId));
 			}
 		}
 	}
 
 	@Override
-	protected void next(JSONObject object) throws JSONException {
-		this.getWisslAdapter().clear();
+	protected void next(RemoteAction action, JSONObject object)
+			throws JSONException {
+		switch (action) {
+			case SONGS:
 
-		JSONArray songArray = object.getJSONArray("songs");
+				this.getWisslAdapter().clear();
 
-		for (int i = 0; i < songArray.length(); i++) {
-			this.getWisslAdapter().add(new Song(songArray.getJSONObject(i)));
+				JSONArray songArray = object.getJSONArray("songs");
+
+				for (int i = 0; i < songArray.length(); i++) {
+					this.getWisslAdapter().add(
+							new Song(songArray.getJSONObject(i)));
+				}
 		}
-
 	}
 
 	@Override

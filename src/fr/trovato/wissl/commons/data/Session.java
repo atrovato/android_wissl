@@ -60,21 +60,56 @@ public class Session extends WisslEntity {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Get user Wissl ID
 	 * 
-	 * @see WisslEntity#toJSON()
+	 * @return User Wissl ID
 	 */
-	@Override
-	public JSONObject toJSON() throws JSONException {
-		JSONObject json = new JSONObject();
+	public int getUserId() {
+		return this.userId;
+	}
 
-		json.accumulate("user_id", this.userId);
-		json.accumulate("username", this.username);
-		json.accumulate("last_activity", this.lastActivity);
-		json.accumulate("created_at", this.createdAt);
-		json.accumulate("origin", this.origin);
-		json.accumulate("lastPlayedSong", this.lastPlayedSong.toJSON());
+	/**
+	 * Get user name
+	 * 
+	 * @return User name
+	 */
+	public String getUsername() {
+		return this.username;
+	}
 
-		return json;
+	/**
+	 * Get user last activity, milliseconds since last server activity
+	 * 
+	 * @return User last activity
+	 */
+	public int getLastActivity() {
+		return this.lastActivity;
+	}
+
+	/**
+	 * Get user session creation, milliseconds since session creation
+	 * 
+	 * @return User session creation
+	 */
+	public int getCreation() {
+		return this.createdAt;
+	}
+
+	/**
+	 * Get client IP address : ADMIN ONLY
+	 * 
+	 * @return Client IP address : ADMIN ONLY
+	 */
+	public String getOrigin() {
+		return this.origin;
+	}
+
+	/**
+	 * Get last played song, or empty
+	 * 
+	 * @return Last played song, or empty
+	 */
+	public Song getLastPlayedSong() {
+		return this.lastPlayedSong;
 	}
 }

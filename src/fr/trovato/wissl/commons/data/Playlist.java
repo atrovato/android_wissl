@@ -4,26 +4,27 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Class representing music artist. An artist contains several albums.
+ * Class representing a playlist. A playlist is a list of songs created by an
+ * user.
  * 
  * @author alexandre.trovato@gmail.com
  * 
  */
-public class Artist extends WisslEntity {
+public class Playlist extends WisslEntity {
 
-	/** Unique artist ID */
+	/** Unique playlist ID */
 	private int id;
 
-	/** Artist name */
+	/** Playlist name */
 	private String name;
 
-	/** Number of albums */
-	private int albums;
+	/** Unique user id, playlist owner */
+	private int user;
 
 	/** Number of songs */
 	private int songs;
 
-	/** Playtime for all songs in seconds */
+	/** Total duration of all songs in seconds */
 	private int playtime;
 
 	/**
@@ -36,7 +37,7 @@ public class Artist extends WisslEntity {
 	 * 
 	 * @see WisslEntity#WisslEntity(JSONObject)
 	 */
-	public Artist(JSONObject json) throws JSONException {
+	public Playlist(JSONObject json) throws JSONException {
 		super(json);
 	}
 
@@ -49,36 +50,36 @@ public class Artist extends WisslEntity {
 	protected void fromJSON(JSONObject json) throws JSONException {
 		this.id = json.getInt("id");
 		this.name = json.getString("name");
-		this.albums = json.getInt("albums");
+		this.user = json.getInt("user");
 		this.songs = json.getInt("songs");
 		this.playtime = json.getInt("playtime");
 	}
 
 	/**
-	 * Get the artist name.
+	 * Get Wissl ID
 	 * 
-	 * @return Artist name
+	 * @return Wissl ID
 	 */
-	public String getName() {
+	public int getId() {
+		return this.id;
+	}
+
+	/**
+	 * Get playlist name
+	 * 
+	 * @return Playlist name
+	 */
+	public String getPlaylistName() {
 		return this.name;
 	}
 
 	/**
-	 * Get the number of albums
+	 * Get user Wissl ID
 	 * 
-	 * @return Number of albums
+	 * @return User Wissl ID
 	 */
-	public int getNbAlbums() {
-		return this.albums;
-	}
-
-	/**
-	 * Get the number of songs
-	 * 
-	 * @return Number of songs
-	 */
-	public int getNbSongs() {
-		return this.songs;
+	public int getUserId() {
+		return this.user;
 	}
 
 	/**
@@ -91,12 +92,12 @@ public class Artist extends WisslEntity {
 	}
 
 	/**
-	 * Get Wissl ID
+	 * Get the number of songs
 	 * 
-	 * @return Wissl ID
+	 * @return Number of songs
 	 */
-	public int getId() {
-		return this.id;
+	public int getNbSongs() {
+		return this.songs;
 	}
 
 }

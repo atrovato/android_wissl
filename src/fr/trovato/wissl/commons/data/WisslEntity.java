@@ -34,12 +34,4 @@ public abstract class WisslEntity {
 	 */
 	protected abstract void fromJSON(JSONObject json) throws JSONException;
 
-	/**
-	 * Build a JSON object from the current entity
-	 * 
-	 * @return The current entity in JSON format
-	 * @throws JSONException
-	 *             JSON error
-	 */
-	public abstract JSONObject toJSON() throws JSONException;
 }
