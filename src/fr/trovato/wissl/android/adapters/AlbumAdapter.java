@@ -1,17 +1,18 @@
-package fr.trovato.wissl.android.adapter;
+package fr.trovato.wissl.android.adapters;
 
 import java.util.List;
 
-import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
+import fr.trovato.wissl.android.activities.player.AlbumListActivity;
 import fr.trovato.wissl.commons.data.Album;
+import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.utils.FormatUtil;
 
 public class AlbumAdapter extends AbstractAdapter<Album> {
 
-	public AlbumAdapter(Context context, List<Album> objects) {
+	public AlbumAdapter(AlbumListActivity context, List<Album> objects) {
 		super(context, R.layout.album_item, objects);
 	}
 
@@ -35,5 +36,10 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 	@Override
 	protected int getLayoutId() {
 		return R.layout.album_item;
+	}
+
+	@Override
+	protected boolean isPlaying(Song playingSong, Album currentEntity) {
+		return currentEntity.getId() == playingSong.getAlbumId();
 	}
 }

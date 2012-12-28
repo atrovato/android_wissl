@@ -1,16 +1,16 @@
-package fr.trovato.wissl.android.adapter;
+package fr.trovato.wissl.android.adapters;
 
 import java.util.List;
 
-import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
+import fr.trovato.wissl.android.activities.player.SongListActivity;
 import fr.trovato.wissl.commons.data.Song;
 
 public class SongAdapter extends AbstractAdapter<Song> {
 
-	public SongAdapter(Context context, List<Song> objects) {
+	public SongAdapter(SongListActivity context, List<Song> objects) {
 		super(context, R.layout.song_item, objects);
 	}
 
@@ -28,6 +28,11 @@ public class SongAdapter extends AbstractAdapter<Song> {
 	@Override
 	protected int getLayoutId() {
 		return R.layout.song_item;
+	}
+
+	@Override
+	protected boolean isPlaying(Song playingSong, Song currentEntity) {
+		return currentEntity.getId() == playingSong.getId();
 	}
 
 }

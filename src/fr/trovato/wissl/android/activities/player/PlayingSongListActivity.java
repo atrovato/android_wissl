@@ -1,4 +1,4 @@
-package fr.trovato.wissl.android.activities;
+package fr.trovato.wissl.android.activities.player;
 
 import android.content.ComponentName;
 import android.os.IBinder;
@@ -31,6 +31,7 @@ public class PlayingSongListActivity extends SongListActivity {
 
 	@Override
 	public void onResume() {
+		super.onResume();
 		this.updateSongList();
 	}
 

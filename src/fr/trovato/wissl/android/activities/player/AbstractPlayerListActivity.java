@@ -1,5 +1,6 @@
-package fr.trovato.wissl.android.activities;
+package fr.trovato.wissl.android.activities.player;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -30,23 +31,21 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
-import android.net.Uri.Builder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
-import fr.trovato.wissl.android.LoginActivity;
 import fr.trovato.wissl.android.R;
-import fr.trovato.wissl.android.adapter.AbstractAdapter;
+import fr.trovato.wissl.android.activities.LoginActivity;
 import fr.trovato.wissl.android.handlers.PlayerHandler;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.Parameters;
@@ -56,7 +55,7 @@ import fr.trovato.wissl.android.services.PlayerService.PlayerBinder;
 import fr.trovato.wissl.android.tasks.RemoteTask;
 import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
-import fr.trovato.wissl.commons.data.WisslEntity;
+import fr.trovato.wissl.commons.utils.Player;
 
 /**
  * Abstract class used for each activity to unify every processing.
@@ -68,7 +67,7 @@ import fr.trovato.wissl.commons.data.WisslEntity;
  * @param <ADAPTER>
  *            Adapter used to display entities
  */
-public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER extends AbstractAdapter<ENTITY>>
+public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAdapter<ENTITY>>
 		extends ListActivity implements OnClickListener,
 		OnRemoteResponseListener, OnItemClickListener, ServiceConnection,
 		OnSeekBarChangeListener {
@@ -125,6 +124,8 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		this.enableHttpResponseCache();
 
 		this.dialog = new ProgressDialog(this);
 		this.dialog.setMessage("Loading...");
@@ -228,31 +229,31 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	@Override
 	public void onClick(View view) {
 		switch (view.getId()) {
-			case R.id.add_to_playlist:
-				this.getPlaylists();
-				break;
-			case R.id.playing:
-				if (this instanceof PlayingSongListActivity) {
-					this.finish();
-				} else {
-					this.showPlaying();
-				}
-				break;
-			case R.id.play:
-				this.play();
-				break;
-			case R.id.stop:
-				this.playButton.setImageResource(R.drawable.play);
-				this.stop();
-				break;
-			case R.id.next:
-				this.playNext();
-				break;
-			case R.id.previous:
-				this.playPrevious();
-				break;
-			default:
-				break;
+		case R.id.add_to_playlist:
+			this.getPlaylists();
+			break;
+		case R.id.playing:
+			if (this instanceof PlayingSongListActivity) {
+				this.finish();
+			} else {
+				this.showPlaying();
+			}
+			break;
+		case R.id.play:
+			this.play();
+			break;
+		case R.id.stop:
+			this.playButton.setImageResource(R.drawable.play);
+			this.stop();
+			break;
+		case R.id.next:
+			this.playNext();
+			break;
+		case R.id.previous:
+			this.playPrevious();
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -260,17 +261,13 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		new RemoteTask(RemoteAction.LOAD_PLAYLISTS, null);
 	}
 
-	private void showPlaylists(CharSequence[] items) {
-		this.playlistDialog.show();
-	}
-
 	protected void addSelectedToPlaylist() {
 		int nbAdded = 0;
 
-		AbstractListActivity.this.clearPlaying();
+		AbstractPlayerListActivity.this.clearPlaying();
 
 		for (Song song : this.getSelectedSongs()) {
-			AbstractListActivity.this.addSong(song);
+			AbstractPlayerListActivity.this.addSong(song);
 			nbAdded++;
 		}
 
@@ -294,19 +291,20 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-		// TODO Auto-generated method stub
-
+		if (this.playerService.isPlaying()) {
+			this.playerHandler.sendMessage(this.playerHandler.obtainMessage(
+					Player.SEEK.ordinal(), progress, this.seekBar.getMax()));
+		}
 	}
 
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
-		// TODO Auto-generated method stub
-
+		// TODO show attempted progress
 	}
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		this.playerService.seekTo(seekBar.getProgress());
+		// TODO hide attempted progress
 	}
 
 	protected abstract void nextPage(ENTITY entity);
@@ -336,12 +334,12 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 *            Request URI
 	 */
 	public void post(RemoteAction action, String uri) {
-		this.post(action, uri, new HashMap<String, String>(1));
+		this.post(action, uri, new HashMap<String, String>());
 	}
 
 	public void showPlaying() {
 		Intent intent = new Intent(this, PlayingSongListActivity.class);
-		this.startActivity(intent);
+		this.startActivityIfNeeded(intent, 0);
 	}
 
 	/**
@@ -383,17 +381,17 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 	 *            Request URI
 	 */
 	public void get(RemoteAction action, String suffix) {
-		Uri sessionUri = Uri.parse(this.getServerUrl() + "/"
-				+ action.getRequestParam()
-				+ (suffix != null ? "/" + suffix : ""));
-		Builder uriBuilder = sessionUri.buildUpon();
-		uriBuilder.appendQueryParameter(
-				RemoteAction.SESSION_ID.getRequestParam(), this.getSessionId());
-
-		this.connect(action, new HttpGet(uriBuilder.build().toString()));
+		this.connect(
+				action,
+				new HttpGet(this.getServerUrl() + "/"
+						+ action.getRequestParam()
+						+ (suffix != null ? "/" + suffix : "")));
 	}
 
 	private void connect(RemoteAction action, HttpRequestBase request) {
+		request.addHeader(RemoteAction.SESSION_ID.getRequestParam(),
+				this.getSessionId());
+
 		this.remoteTask = new RemoteTask(action, this);
 		this.remoteTask.execute(request);
 	}
@@ -508,53 +506,53 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 			int arraySize = jsonArray.length();
 			for (int i = 0; i < arraySize; i++) {
 				switch (action) {
-					case LOAD_PLAYLISTS:
-						if (this.playlists.isEmpty()) {
-							JSONObject object = jsonArray.getJSONObject(i);
+				case LOAD_PLAYLISTS:
+					if (this.playlists.isEmpty()) {
+						JSONObject object = jsonArray.getJSONObject(i);
 
-							JSONArray albumArray = object
-									.getJSONArray(RemoteAction.LOAD_PLAYLISTS
-											.getRequestParam());
-							int nbAlbums = albumArray.length();
+						JSONArray albumArray = object
+								.getJSONArray(RemoteAction.LOAD_PLAYLISTS
+										.getRequestParam());
+						int nbAlbums = albumArray.length();
 
-							CharSequence[] playlists = new CharSequence[nbAlbums];
+						CharSequence[] playlists = new CharSequence[nbAlbums];
 
-							for (int j = 0; j < nbAlbums; j++) {
-								Playlist playlist = new Playlist(
-										albumArray.getJSONObject(j));
+						for (int j = 0; j < nbAlbums; j++) {
+							Playlist playlist = new Playlist(
+									albumArray.getJSONObject(j));
 
-								this.playlists.add(playlist);
+							this.playlists.add(playlist);
 
-								playlists[j] = playlist.getPlaylistName();
-							}
-
-							AlertDialog.Builder builder = new AlertDialog.Builder(
-									this);
-							builder.setTitle(R.string.playlists);
-							builder.setSingleChoiceItems(playlists, -1,
-									new DialogInterface.OnClickListener() {
-										@Override
-										public void onClick(
-												DialogInterface dialog, int item) {
-											switch (item) {
-												case 0:
-													AbstractListActivity.this
-															.addSelectedToPlaylist();
-													break;
-
-												default:
-													break;
-											}
-										}
-									});
-							this.playlistDialog = builder.create();
+							playlists[j] = playlist.getPlaylistName();
 						}
 
-						this.playlistDialog.show();
-						break;
-					default:
-						this.next(action, jsonArray.getJSONObject(i));
-						break;
+						AlertDialog.Builder builder = new AlertDialog.Builder(
+								this);
+						builder.setTitle(R.string.playlists);
+						builder.setSingleChoiceItems(playlists, -1,
+								new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog,
+											int item) {
+										switch (item) {
+										case 0:
+											AbstractPlayerListActivity.this
+													.addSelectedToPlaylist();
+											break;
+
+										default:
+											break;
+										}
+									}
+								});
+						this.playlistDialog = builder.create();
+					}
+
+					this.playlistDialog.show();
+					break;
+				default:
+					this.next(action, jsonArray.getJSONObject(i));
+					break;
 				}
 			}
 
@@ -575,7 +573,6 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		return this.listAdapter;
 	}
 
-	// Fonction appelée au clic d'une des checkbox
 	public void checkItemHandler(View view) {
 		CheckBox checkBox = (CheckBox) view;
 		int position = (Integer) checkBox.getTag();
@@ -601,7 +598,6 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 		this.playerService = binder.getService();
 		this.playerService.setHandler(this.playerHandler);
 		this.playerServiceBound = true;
-
 	}
 
 	@Override
@@ -611,6 +607,21 @@ public abstract class AbstractListActivity<ENTITY extends WisslEntity, ADAPTER e
 
 	protected void stopWaiting() {
 		this.dialog.dismiss();
+	}
+
+	private void enableHttpResponseCache() {
+		try {
+			long httpCacheSize = 10 * 1024 * 1024; // 10 MiB
+			File httpCacheDir = new File(getCacheDir(), "http");
+			Class.forName("android.net.http.HttpResponseCache")
+					.getMethod("install", File.class, long.class)
+					.invoke(null, httpCacheDir, httpCacheSize);
+		} catch (Exception httpResponseCacheNotAvailable) {
+		}
+	}
+
+	public PlayerService getPlayerService() {
+		return this.playerService;
 	}
 
 }

@@ -1,4 +1,4 @@
-package fr.trovato.wissl.android.adapter;
+package fr.trovato.wissl.android.adapters;
 
 import java.util.List;
 
@@ -8,12 +8,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import fr.trovato.wissl.android.activities.player.AbstractPlayerListActivity;
+import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.data.WisslEntity;
 
 public abstract class AbstractAdapter<ENTITY extends WisslEntity> extends
 		ArrayAdapter<ENTITY> {
 
-	public AbstractAdapter(Context context, int layout, List<ENTITY> objects) {
+	public AbstractAdapter(
+			AbstractPlayerListActivity<ENTITY, ? extends ArrayAdapter<ENTITY>> context,
+			int layout, List<ENTITY> objects) {
 		super(context, layout, objects);
 	}
 
@@ -32,8 +36,17 @@ public abstract class AbstractAdapter<ENTITY extends WisslEntity> extends
 
 		this.completeView(currentEntity, rowView);
 
+		// Song playingSong = this.playerService.getPlayingSong();
+		// if (playingSong != null && this.isPlaying(playingSong,
+		// currentEntity)) {
+		// rowView.setBackgroundColor(this.getContext().getResources()
+		// .getColor(android.R.color.background_dark));
+		// }
+
 		return rowView;
 	}
+
+	protected abstract boolean isPlaying(Song playingSong, ENTITY currentEntity);
 
 	protected abstract void completeView(ENTITY currentEntity, View rowView);
 
@@ -44,4 +57,5 @@ public abstract class AbstractAdapter<ENTITY extends WisslEntity> extends
 			this.add(entity);
 		}
 	}
+
 }

@@ -12,6 +12,12 @@
         <item name="android:src">@drawable/no_artwork</item>
     </style>
 
+    <style name="Icon" parent="@style/Artwork" />
+
+    <style name="HomeItem" parent="@android:style/TextAppearance">
+        <item name="android:textSize">20sp</item>
+    </style>
+
     <style name="Marquee" parent="@android:style/TextAppearance">
         <item name="android:layout_width">fill_parent</item>
         <item name="android:layout_height">wrap_content</item>

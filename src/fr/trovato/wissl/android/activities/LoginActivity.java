@@ -1,6 +1,5 @@
-package fr.trovato.wissl.android;
+package fr.trovato.wissl.android.activities;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +29,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
-import fr.trovato.wissl.android.activities.ArtistListActivity;
+import fr.trovato.wissl.android.R;
+import fr.trovato.wissl.android.activities.player.HomeActivity;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.Parameters;
 import fr.trovato.wissl.android.remote.RemoteAction;
@@ -187,7 +187,7 @@ public class LoginActivity extends Activity implements
 					sessionId);
 			editor.commit();
 
-			Intent intent = new Intent(this, ArtistListActivity.class);
+			Intent intent = new Intent(this, HomeActivity.class);
 			this.startActivityIfNeeded(intent, 0);
 		}
 	}
@@ -235,7 +235,7 @@ public class LoginActivity extends Activity implements
 			request.setEntity(entity);
 
 			this.connect(request);
-		} catch (UnsupportedEncodingException e) {
+		} catch (Exception e) {
 			this.showErrorDialog(e.getMessage());
 		}
 	}

@@ -1,4 +1,4 @@
-package fr.trovato.wissl.android.activities;
+package fr.trovato.wissl.android.activities.player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +12,14 @@ import org.json.JSONObject;
 import android.content.Intent;
 import android.net.Uri;
 import android.net.Uri.Builder;
-import fr.trovato.wissl.android.adapter.AlbumAdapter;
+import fr.trovato.wissl.android.adapters.AlbumAdapter;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Album;
 import fr.trovato.wissl.commons.data.Song;
 
 public class AlbumListActivity extends
-		AbstractListActivity<Album, AlbumAdapter> implements
+		AbstractPlayerListActivity<Album, AlbumAdapter> implements
 		OnRemoteResponseListener {
 
 	@Override

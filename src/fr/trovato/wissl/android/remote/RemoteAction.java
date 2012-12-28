@@ -29,6 +29,9 @@ public enum RemoteAction {
 	/** Artist ID */
 	ARTIST_ID("artistId"),
 
+	/** Playlist ID */
+	PLAYLIST_ID("playlistId"),
+
 	/** Albums */
 	ALBUMS("albums"),
 
@@ -40,6 +43,15 @@ public enum RemoteAction {
 
 	/** Songs */
 	SONGS("songs"),
+
+	/** Playlist */
+	PLAYLIST("playlist"),
+
+	/** Random */
+	RANDOM("playlist/random"),
+
+	/** Load playlists action */
+	PLAYLISTS("playlists"),
 
 	/** Load playlists action */
 	LOAD_PLAYLISTS("playlists");

@@ -1,4 +1,4 @@
-package fr.trovato.wissl.android.activities;
+package fr.trovato.wissl.android.activities.player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,13 +8,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Intent;
-import fr.trovato.wissl.android.adapter.ArtistAdapter;
+import fr.trovato.wissl.android.adapters.ArtistAdapter;
 import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Artist;
 import fr.trovato.wissl.commons.data.Song;
 
 public class ArtistListActivity extends
-		AbstractListActivity<Artist, ArtistAdapter> {
+		AbstractPlayerListActivity<Artist, ArtistAdapter> {
 
 	@Override
 	protected void next(RemoteAction action, JSONObject object)

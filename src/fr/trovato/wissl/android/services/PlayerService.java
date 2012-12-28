@@ -110,10 +110,22 @@ public class PlayerService extends Service implements OnPreparedListener,
 		this.queue.clear();
 	}
 
+	public void addAll(List<Song> songList) throws IllegalArgumentException,
+			SecurityException, IllegalStateException, IOException {
+		this.queue.addAll(songList);
+
+		this.songAdded();
+	}
+
 	public void add(Song song) throws IllegalArgumentException,
 			SecurityException, IllegalStateException, IOException {
 		this.queue.add(song);
 
+		this.songAdded();
+	}
+
+	private void songAdded() throws IllegalArgumentException,
+			SecurityException, IllegalStateException, IOException {
 		this.playerHandler
 				.sendMessage(this.playerHandler.obtainMessage(
 						Player.QUEUE.ordinal(), this.queue.size(),
@@ -239,5 +251,13 @@ public class PlayerService extends Service implements OnPreparedListener,
 
 	public void setHandler(PlayerHandler playerHandler) {
 		this.playerHandler = playerHandler;
+	}
+
+	public Song getPlayingSong() {
+		if (this.isPlaying()) {
+			return this.queue.get(this.currentPosition);
+		} else {
+			return null;
+		}
 	}
 }
