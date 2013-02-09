@@ -1,9 +1,7 @@
 package fr.trovato.wissl.android.activities.player;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,18 +18,7 @@ public class PlaylistActivity extends
 
 	@Override
 	protected void loadEntities() {
-		Intent intent = this.getIntent();
-
-		if (intent != null && intent.hasExtra(RemoteAction.RANDOM.name())) {
-			Map<String, String> params = new HashMap<String, String>(2);
-			params.put("name", "Random");
-			params.put("number", "20");
-
-			this.post(RemoteAction.RANDOM,
-					RemoteAction.RANDOM.getRequestParam(), params);
-		} else {
-			this.get(RemoteAction.PLAYLISTS, null);
-		}
+		this.get(RemoteAction.PLAYLISTS, null);
 	}
 
 	@Override
@@ -43,7 +30,7 @@ public class PlaylistActivity extends
 
 			List<Playlist> playlistList = new ArrayList<Playlist>();
 
-			JSONArray artists = object.getJSONArray(action.getRequestParam());
+			JSONArray artists = object.getJSONArray(action.getRequestURI());
 
 			for (int i = 0; i < artists.length(); i++) {
 				JSONObject obj = artists.getJSONObject(i);
@@ -51,10 +38,6 @@ public class PlaylistActivity extends
 			}
 
 			this.getWisslAdapter().addAll(playlistList);
-			break;
-		case RANDOM:
-			Playlist entity = new Playlist(object.getJSONObject("playlist"));
-			this.nextPage(entity);
 			break;
 		default:
 			break;

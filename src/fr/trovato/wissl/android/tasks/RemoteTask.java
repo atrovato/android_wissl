@@ -112,7 +112,7 @@ public class RemoteTask extends AsyncTask<HttpRequestBase, Void, JSONArray> {
 					default:
 						this.setException(new Exception(
 								json.getString(RemoteAction.ERROR
-										.getRequestParam())));
+										.getRequestURI())));
 				}
 			} catch (ClientProtocolException e) {
 				this.setException(e);

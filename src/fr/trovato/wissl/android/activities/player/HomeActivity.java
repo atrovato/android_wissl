@@ -1,7 +1,9 @@
 package fr.trovato.wissl.android.activities.player;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,9 +13,11 @@ import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.adapters.HomeAdapter;
 import fr.trovato.wissl.android.data.HomeItem;
 import fr.trovato.wissl.android.remote.RemoteAction;
+import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
 
-public class HomeActivity extends AbstractPlayerListActivity<HomeItem, HomeAdapter> {
+public class HomeActivity extends
+		AbstractPlayerListActivity<HomeItem, HomeAdapter> {
 
 	@Override
 	protected List<Song> getSelectedSongs() {
@@ -25,14 +29,32 @@ public class HomeActivity extends AbstractPlayerListActivity<HomeItem, HomeAdapt
 		Intent intent = new Intent(this, entity.getIntentClass());
 
 		if (entity.getText() == R.string.random) {
-			intent.putExtra(RemoteAction.RANDOM.name(), true);
+			Map<String, String> params = new HashMap<String, String>(2);
+			params.put("name", "Random");
+			params.put("number", "20");
+
+			this.post(RemoteAction.RANDOM, RemoteAction.RANDOM.getRequestURI(),
+					params);
+		} else {
+			this.startActivityIfNeeded(intent, 0);
 		}
+	}
+
+	protected void playRandom(Playlist entity) {
+		Intent intent = new Intent(this, SongListActivity.class);
+		intent.putExtra(RemoteAction.PLAYLIST_ID.name(), entity.getId());
 		this.startActivityIfNeeded(intent, 0);
 	}
 
 	@Override
 	protected void next(RemoteAction action, JSONObject object)
 			throws JSONException {
+		switch (action) {
+		case RANDOM:
+			Playlist entity = new Playlist(object.getJSONObject("playlist"));
+			this.playRandom(entity);
+			break;
+		}
 	}
 
 	@Override

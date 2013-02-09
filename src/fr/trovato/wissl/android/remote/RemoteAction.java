@@ -56,8 +56,8 @@ public enum RemoteAction {
 	/** Load playlists action */
 	LOAD_PLAYLISTS("playlists");
 
-	/** Parameter used for remote */
-	private String requestParam;
+	/** URI used for remote */
+	private String requestURI;
 
 	/** Wissl server enter point */
 	public static final String WISSL_ENTRY_POINT = "wissl";
@@ -65,19 +65,19 @@ public enum RemoteAction {
 	/**
 	 * Constructor
 	 * 
-	 * @param requestParam
-	 *            Parameter used for remote
+	 * @param requestURI
+	 *            URI used for remote
 	 */
-	private RemoteAction(String requestParam) {
-		this.requestParam = requestParam;
+	private RemoteAction(String requestURI) {
+		this.requestURI = requestURI;
 	}
 
 	/**
-	 * Get the request parameter name
+	 * Get the request URI
 	 * 
-	 * @return Parameter used for remote
+	 * @return URI used for remote
 	 */
-	public String getRequestParam() {
-		return this.requestParam;
+	public String getRequestURI() {
+		return this.requestURI;
 	}
 }

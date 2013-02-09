@@ -3,24 +3,20 @@ package fr.trovato.wissl.android.services;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.media.MediaPlayer.OnErrorListener;
-import android.media.MediaPlayer.OnPreparedListener;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
-import fr.trovato.wissl.android.handlers.PlayerHandler;
+import fr.trovato.wissl.android.activities.player.AbstractPlayerListActivity;
+import fr.trovato.wissl.android.remote.Parameters;
+import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Song;
-import fr.trovato.wissl.commons.utils.Player;
 
 /**
  * Service playing music in background
@@ -28,24 +24,25 @@ import fr.trovato.wissl.commons.utils.Player;
  * @author alexandre.trovato@gmail.com
  * 
  */
-public class PlayerService extends Service implements OnPreparedListener,
-		OnCompletionListener, OnErrorListener {
+public class PlayerService extends Service {
 
 	/** Server URL */
 	public final static String SERVER_URL = "SERVER_URL";
 	/** Session ID */
 	public final static String SESSION_ID = "SESSION_ID";
+
+	private final static String LOG_TAG = "PLAYER_SERVICE";
+
 	private List<Song> queue;
 	private MediaPlayer player;
 	private int currentPosition;
 	private String serverUrl;
 	private String sessionId;
-	private ScheduledExecutorService myScheduledExecutorService;
+	private AbstractPlayerListActivity<?, ?> client;
 
 	// This is the object that receives interactions from clients. See
 	// RemoteService for a more complete example.
 	private final IBinder binder = new PlayerBinder();
-	private PlayerHandler playerHandler;
 
 	/**
 	 * Class for clients to access. Because we know this service always runs in
@@ -57,61 +54,56 @@ public class PlayerService extends Service implements OnPreparedListener,
 		}
 	}
 
+	public void setClient(AbstractPlayerListActivity<?, ?> client) {
+		this.client = client;
+
+		player.setOnCompletionListener(this.client);
+		player.setOnPreparedListener(this.client);
+		player.setOnErrorListener(this.client);
+		player.setOnBufferingUpdateListener(this.client);
+	}
+
+	public MediaPlayer getPlayer() {
+		return this.player;
+	}
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
-		this.player = new MediaPlayer();
-		this.player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		this.player.setOnPreparedListener(this);
-		this.player.setOnCompletionListener(this);
-		this.player.setOnErrorListener(this);
+		Log.d(LOG_TAG, "Creating... start");
+
+		this.initializePlayer();
+
+		// Restore preferences
+		SharedPreferences settings = this.getSharedPreferences(
+				Parameters.PREFS_NAME.name(), 0);
+		this.sessionId = settings.getString(
+				RemoteAction.SESSION_ID.getRequestURI(), null);
+		this.serverUrl = settings.getString(Parameters.SERVER_URL.name(), null)
+				+ "/" + RemoteAction.WISSL_ENTRY_POINT;
 
 		this.currentPosition = 0;
 
 		this.queue = new ArrayList<Song>();
 
-		this.myScheduledExecutorService = Executors.newScheduledThreadPool(1);
-		this.myScheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
-			@Override
-			public void run() {
-				if (PlayerService.this.player.isPlaying()) {
-					PlayerService.this.playerHandler
-							.sendMessage(PlayerService.this.playerHandler
-									.obtainMessage(Player.SEEK.ordinal(),
-											PlayerService.this.player
-													.getCurrentPosition(),
-											PlayerService.this.player
-													.getDuration()));
-				}
-			}
-		}, 200, 200, TimeUnit.MILLISECONDS);
+		Log.d(LOG_TAG, "Creating... end");
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		this.serverUrl = intent.getStringExtra(PlayerService.SERVER_URL);
-		this.sessionId = intent.getStringExtra(PlayerService.SESSION_ID);
-
 		return this.binder;
 	}
 
-	@Override
-	public void onPrepared(MediaPlayer player) {
-		this.play();
-	}
-
 	public void clear() {
-		this.playerHandler
-				.sendMessage(this.playerHandler.obtainMessage(
-						Player.QUEUE.ordinal(), this.queue.size(),
-						this.currentPosition));
 		this.queue.clear();
 	}
 
 	public void addAll(List<Song> songList) throws IllegalArgumentException,
 			SecurityException, IllegalStateException, IOException {
+		Log.d(LOG_TAG, "Add all (" + songList.size() + ") songs");
+
 		this.queue.addAll(songList);
 
 		this.songAdded();
@@ -119,6 +111,8 @@ public class PlayerService extends Service implements OnPreparedListener,
 
 	public void add(Song song) throws IllegalArgumentException,
 			SecurityException, IllegalStateException, IOException {
+		Log.d(LOG_TAG, "Add song : " + song.getTitle());
+
 		this.queue.add(song);
 
 		this.songAdded();
@@ -126,68 +120,52 @@ public class PlayerService extends Service implements OnPreparedListener,
 
 	private void songAdded() throws IllegalArgumentException,
 			SecurityException, IllegalStateException, IOException {
-		this.playerHandler
-				.sendMessage(this.playerHandler.obtainMessage(
-						Player.QUEUE.ordinal(), this.queue.size(),
-						this.currentPosition));
+		Log.d(LOG_TAG, "Song added");
 
-		if (!this.player.isPlaying()) {
+		if (!this.getPlayer().isPlaying()) {
 			this.playSong();
 		}
 	}
 
 	@Override
 	public void onDestroy() {
-		this.player.release();
+		this.stop();
+		this.getPlayer().release();
 		this.player = null;
 	}
 
 	private void playSong() throws IllegalArgumentException, SecurityException,
 			IllegalStateException, IOException {
+		Log.d(LOG_TAG, "Play song");
 
 		if (this.currentPosition >= 0 && this.queue.size() > 0
 				&& this.currentPosition < this.queue.size()) {
-
 			Song song = this.queue.get(this.currentPosition);
 
-			Uri uri = this.buildUri(song);
+			Log.d(LOG_TAG, "Play song " + this.currentPosition);
+
+			String uri = this.buildUri(song);
 			Log.d(this.getClass().getSimpleName(),
 					"Streaming " + uri.toString());
 
-			this.player.reset();
-			this.player.setDataSource(this, uri);
-			this.player.prepareAsync();
+			this.getPlayer().reset();
+			this.getPlayer().setDataSource(uri);
+			this.getPlayer().setAudioStreamType(AudioManager.STREAM_MUSIC);
+			this.getPlayer().prepareAsync();
 		} else {
 			this.stop();
 		}
 	}
 
-	private Uri buildUri(Song song) {
-		Uri uri = Uri.parse(this.serverUrl + "/song/" + song.getId()
-				+ "/stream?sessionId=" + this.sessionId);
-
-		return uri;
-	}
-
-	@Override
-	public void onCompletion(MediaPlayer player) {
-		this.currentPosition++;
-
-		try {
-			this.playSong();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	private String buildUri(Song song) {
+		return this.serverUrl + "/song/" + song.getId() + "/stream?sessionId="
+				+ this.sessionId;
 	}
 
 	public void playNext() throws IllegalArgumentException, SecurityException,
 			IllegalStateException, IOException {
+		Log.d(LOG_TAG, "Play next");
+
 		this.stop();
 		this.currentPosition++;
 
@@ -195,37 +173,39 @@ public class PlayerService extends Service implements OnPreparedListener,
 	}
 
 	public void stop() {
+		Log.d(LOG_TAG, "Stop");
+
 		this.currentPosition = 0;
-		this.player.stop();
-		this.playerHandler.sendMessage(this.playerHandler
-				.obtainMessage(Player.STOP.ordinal()));
+
+		if (this.isPlaying()) {
+			this.getPlayer().stop();
+		}
 	}
 
 	public void playPrevious() throws IllegalStateException,
 			IllegalArgumentException, SecurityException, IOException {
-		this.player.stop();
+		Log.d(LOG_TAG, "Play previous");
+
+		this.stop();
 		this.currentPosition--;
 
 		this.playSong();
 	}
 
 	public boolean isPlaying() {
-		return this.player.isPlaying();
+		return this.getPlayer().isPlaying();
 	}
 
 	public void pause() {
-		this.player.pause();
-		this.playerHandler.sendMessage(this.playerHandler
-				.obtainMessage(Player.PAUSE.ordinal()));
+		this.getPlayer().pause();
 	}
 
 	public void play() {
-		if (!this.player.isPlaying()) {
-			this.player.start();
-		}
+		Log.d(LOG_TAG, "Play");
 
-		this.playerHandler.sendMessage(this.playerHandler
-				.obtainMessage(Player.PLAY.ordinal()));
+		if (!this.getPlayer().isPlaying()) {
+			this.getPlayer().start();
+		}
 	}
 
 	public List<Song> getSongList() {
@@ -239,18 +219,8 @@ public class PlayerService extends Service implements OnPreparedListener,
 		this.playSong();
 	}
 
-	@Override
-	public boolean onError(MediaPlayer mp, int what, int extra) {
-		return this.playerHandler.sendMessage(this.playerHandler.obtainMessage(
-				Player.ERROR.ordinal(), what, extra));
-	}
-
 	public void seekTo(int progress) {
-		this.player.seekTo(progress);
-	}
-
-	public void setHandler(PlayerHandler playerHandler) {
-		this.playerHandler = playerHandler;
+		this.getPlayer().seekTo(progress);
 	}
 
 	public Song getPlayingSong() {
@@ -260,4 +230,36 @@ public class PlayerService extends Service implements OnPreparedListener,
 			return null;
 		}
 	}
+
+	/**
+	 * Initializes a StatefulMediaPlayer for streaming playback of the provided
+	 * StreamStation
+	 * 
+	 * @param station
+	 *            The StreamStation representing the station to play
+	 */
+	private void initializePlayer() {
+		player = new MediaPlayer();
+
+		player.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+	}
+
+	public boolean hasNext() {
+		return this.currentPosition >= 0
+				&& this.currentPosition < this.queue.size();
+	}
+
+	public boolean hasPrevious() {
+		return this.currentPosition > 0
+				&& this.currentPosition > this.queue.size();
+	}
+
+	public int getDuration() {
+		return this.getPlayer().getDuration();
+	}
+
+	public int getCurrentPosition() {
+		return this.getPlayer().getCurrentPosition();
+	}
+
 }

@@ -9,6 +9,17 @@ public class PlayingSongListActivity extends SongListActivity {
 
 	private boolean bound = false;
 
+//	@Override
+//	public void onClick(View view) {
+//		switch (view.getId()) {
+//		case R.id.playing:
+//			this.finish();
+//			break;
+//		default:
+//			super.onClick(view);
+//		}
+//	}
+
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view,
 			int position, long id) {

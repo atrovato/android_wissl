@@ -26,13 +26,13 @@ public class ArtistListActivity extends
 				List<Artist> artistList = new ArrayList<Artist>();
 
 				JSONArray artists = object.getJSONArray(RemoteAction.ARTISTS
-						.getRequestParam());
+						.getRequestURI());
 
 				for (int i = 0; i < artists.length(); i++) {
 					JSONObject obj = artists.getJSONObject(i);
 					artistList.add(new Artist(obj
 							.getJSONObject(RemoteAction.ARTIST
-									.getRequestParam())));
+									.getRequestURI())));
 				}
 
 				this.getWisslAdapter().addAll(artistList);

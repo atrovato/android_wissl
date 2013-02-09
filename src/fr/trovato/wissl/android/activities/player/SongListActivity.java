@@ -12,7 +12,8 @@ import fr.trovato.wissl.android.adapters.SongAdapter;
 import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Song;
 
-public class SongListActivity extends AbstractPlayerListActivity<Song, SongAdapter> {
+public class SongListActivity extends
+		AbstractPlayerListActivity<Song, SongAdapter> {
 
 	@Override
 	protected void loadEntities() {
@@ -40,27 +41,24 @@ public class SongListActivity extends AbstractPlayerListActivity<Song, SongAdapt
 			this.addSongs(object.getJSONArray("songs"));
 			break;
 		case PLAYLIST:
-			this.addSongs(object.getJSONArray("playlist"));
-			this.playAll();
+			List<Song> songList = this.addSongs(object.getJSONArray("playlist"));
+			super.addSongs(songList);
 			break;
 		}
 
 	}
 
-	private void playAll() {
-		int nbSongs = this.getWisslAdapter().getCount();
-
-		for (int i = 0; i < nbSongs; i++) {
-			super.addSong(this.getWisslAdapter().getItem(i));
-		}
-	}
-
-	private void addSongs(JSONArray songArray) throws JSONException {
+	private List<Song> addSongs(JSONArray songArray) throws JSONException {
 		this.getWisslAdapter().clear();
+		List<Song> songList = new ArrayList<Song>();
 
 		for (int i = 0; i < songArray.length(); i++) {
-			this.getWisslAdapter().add(new Song(songArray.getJSONObject(i)));
+			Song song = new Song(songArray.getJSONObject(i));
+			this.getWisslAdapter().add(song);
+			songList.add(song);
 		}
+		
+		return songList;
 	}
 
 	@Override

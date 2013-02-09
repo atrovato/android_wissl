@@ -29,10 +29,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnBufferingUpdateListener;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -42,20 +48,18 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.LoginActivity;
-import fr.trovato.wissl.android.handlers.PlayerHandler;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.Parameters;
 import fr.trovato.wissl.android.remote.RemoteAction;
+import fr.trovato.wissl.android.services.IPlayerServiceClient;
 import fr.trovato.wissl.android.services.PlayerService;
 import fr.trovato.wissl.android.services.PlayerService.PlayerBinder;
 import fr.trovato.wissl.android.tasks.RemoteTask;
 import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
-import fr.trovato.wissl.commons.utils.Player;
 
 /**
  * Abstract class used for each activity to unify every processing.
@@ -68,15 +72,16 @@ import fr.trovato.wissl.commons.utils.Player;
  *            Adapter used to display entities
  */
 public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAdapter<ENTITY>>
-		extends ListActivity implements OnClickListener,
-		OnRemoteResponseListener, OnItemClickListener, ServiceConnection,
-		OnSeekBarChangeListener {
+		extends ListActivity implements OnRemoteResponseListener,
+		OnItemClickListener, ServiceConnection, IPlayerServiceClient,
+		OnErrorListener, OnPreparedListener, OnCompletionListener,
+		OnClickListener, OnBufferingUpdateListener {
+
+	private final static String LOG_TAG = "MEDIA_CONTROLER";
 
 	/** Wissl server URL */
 	private String serverUrl;
 
-	/** Background service playing music */
-	private PlayerService playerService;
 	/** Background service playing music enable flag */
 	private boolean playerServiceBound = false;
 
@@ -110,13 +115,12 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	/** Playlists */
 	private List<Playlist> playlists;
 
-	/** Handler to display player status */
-	private PlayerHandler playerHandler;
-
 	/** Current Wissl entities list adapter */
 	private ADAPTER listAdapter;
 
 	private AlertDialog playlistDialog;
+
+	private PlayerService playerService;
 
 	/**
 	 * Load settings and prepare player interface
@@ -155,6 +159,19 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.listAdapter = this.buildAdapter();
 		this.setListAdapter(this.listAdapter);
 
+		ConnectivityManager connMgr = (ConnectivityManager) this
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+		if (networkInfo != null && networkInfo.isConnected()) {
+			this.loadEntities();
+		} else {
+			this.showErrorDialog(this.getString(R.string.no_connection));
+		}
+
+		this.initializePlayer();
+	}
+
+	private void initializePlayer() {
 		this.addToPlaylistButton = (ImageButton) this
 				.findViewById(R.id.add_to_playlist);
 		this.addToPlaylistButton.setOnClickListener(this);
@@ -181,20 +198,10 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.previousButton.setEnabled(false);
 
 		this.seekBar = (SeekBar) this.findViewById(R.id.seeker);
-		this.seekBar.setOnSeekBarChangeListener(this);
 		this.seekBar.setEnabled(false);
 
-		this.playerHandler = new PlayerHandler(this.seekBar, this.playButton,
-				this.stopButton, this.nextButton, this.previousButton,
-				this.playingButton);
-
-		ConnectivityManager connMgr = (ConnectivityManager) this
-				.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-		if (networkInfo != null && networkInfo.isConnected()) {
-			this.loadEntities();
-		} else {
-			this.showErrorDialog(this.getString(R.string.no_connection));
+		if (this.playerServiceBound) {
+			this.drawButtons(this.playerService.getPlayer());
 		}
 	}
 
@@ -209,7 +216,9 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		playerIntent.putExtra(PlayerService.SERVER_URL, this.getServerUrl());
 		playerIntent.putExtra(PlayerService.SESSION_ID, this.getSessionId());
 
-		this.bindService(playerIntent, this, Context.BIND_AUTO_CREATE);
+		Intent intent = new Intent(this, PlayerService.class);
+
+		bindService(intent, this, Context.BIND_AUTO_CREATE);
 	}
 
 	/**
@@ -226,6 +235,21 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 	}
 
+	/**
+	 * Closes unbinds from service, stops the service, and calls finish()
+	 */
+	public void shutdownActivity() {
+		if (this.playerServiceBound) {
+			this.playerService.stop();
+			this.unbindService(this);
+			this.playerServiceBound = false;
+		}
+
+		Intent intent = new Intent(this, PlayerService.class);
+		stopService(intent);
+		finish();
+	}
+
 	@Override
 	public void onClick(View view) {
 		switch (view.getId()) {
@@ -233,11 +257,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 			this.getPlaylists();
 			break;
 		case R.id.playing:
-			if (this instanceof PlayingSongListActivity) {
-				this.finish();
-			} else {
-				this.showPlaying();
-			}
+			this.showPlaying();
 			break;
 		case R.id.play:
 			this.play();
@@ -255,6 +275,8 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		default:
 			break;
 		}
+
+		this.drawButtons(this.playerService.getPlayer());
 	}
 
 	private void getPlaylists() {
@@ -288,25 +310,6 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.nextPage(entity);
 	}
 
-	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress,
-			boolean fromUser) {
-		if (this.playerService.isPlaying()) {
-			this.playerHandler.sendMessage(this.playerHandler.obtainMessage(
-					Player.SEEK.ordinal(), progress, this.seekBar.getMax()));
-		}
-	}
-
-	@Override
-	public void onStartTrackingTouch(SeekBar seekBar) {
-		// TODO show attempted progress
-	}
-
-	@Override
-	public void onStopTrackingTouch(SeekBar seekBar) {
-		// TODO hide attempted progress
-	}
-
 	protected abstract void nextPage(ENTITY entity);
 
 	public SharedPreferences getSettings() {
@@ -315,7 +318,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 
 	public String getSessionId() {
 		return this.getSettings().getString(
-				RemoteAction.SESSION_ID.getRequestParam(), null);
+				RemoteAction.SESSION_ID.getRequestURI(), null);
 	}
 
 	/**
@@ -324,7 +327,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	 * @returnThe server URL
 	 */
 	public String getServerUrl() {
-		return this.serverUrl + "/wissl";
+		return this.serverUrl + "/" + RemoteAction.WISSL_ENTRY_POINT;
 	}
 
 	/**
@@ -381,15 +384,13 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	 *            Request URI
 	 */
 	public void get(RemoteAction action, String suffix) {
-		this.connect(
-				action,
-				new HttpGet(this.getServerUrl() + "/"
-						+ action.getRequestParam()
+		this.connect(action,
+				new HttpGet(this.getServerUrl() + "/" + action.getRequestURI()
 						+ (suffix != null ? "/" + suffix : "")));
 	}
 
 	private void connect(RemoteAction action, HttpRequestBase request) {
-		request.addHeader(RemoteAction.SESSION_ID.getRequestParam(),
+		request.addHeader(RemoteAction.SESSION_ID.getRequestURI(),
 				this.getSessionId());
 
 		this.remoteTask = new RemoteTask(action, this);
@@ -398,21 +399,20 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 
 	public void showErrorDialog(String message) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(message).setNeutralButton(
-				this.getString(R.string.ok),
-				new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
-		builder.create();
-		builder.show();
+		builder.setTitle("Error")
+				.setMessage(message)
+				.setNeutralButton(this.getString(R.string.ok),
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int id) {
+								dialog.cancel();
+							}
+						}).create().show();
 	}
 
 	public void notLogged() {
 		SharedPreferences.Editor editor = this.getSettings().edit();
-		editor.remove(RemoteAction.SESSION_ID.getRequestParam());
+		editor.remove(RemoteAction.SESSION_ID.getRequestURI());
 		editor.commit();
 
 		Intent myIntent = new Intent(this.getBaseContext(), LoginActivity.class);
@@ -448,6 +448,20 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	public void addSong(Song song) {
 		try {
 			this.playerService.add(song);
+		} catch (IllegalArgumentException e) {
+			this.showErrorDialog(e.getMessage());
+		} catch (SecurityException e) {
+			this.showErrorDialog(e.getMessage());
+		} catch (IllegalStateException e) {
+			this.showErrorDialog(e.getMessage());
+		} catch (IOException e) {
+			this.showErrorDialog(e.getMessage());
+		}
+	}
+
+	public void addSongs(List<Song> songList) {
+		try {
+			this.playerService.addAll(songList);
 		} catch (IllegalArgumentException e) {
 			this.showErrorDialog(e.getMessage());
 		} catch (SecurityException e) {
@@ -512,7 +526,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 
 						JSONArray albumArray = object
 								.getJSONArray(RemoteAction.LOAD_PLAYLISTS
-										.getRequestParam());
+										.getRequestURI());
 						int nbAlbums = albumArray.length();
 
 						CharSequence[] playlists = new CharSequence[nbAlbums];
@@ -596,8 +610,9 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	public void onServiceConnected(ComponentName name, IBinder service) {
 		PlayerBinder binder = (PlayerBinder) service;
 		this.playerService = binder.getService();
-		this.playerService.setHandler(this.playerHandler);
 		this.playerServiceBound = true;
+
+		this.playerService.setClient(this);
 	}
 
 	@Override
@@ -620,8 +635,55 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 	}
 
-	public PlayerService getPlayerService() {
-		return this.playerService;
+	@Override
+	public void onBufferingUpdate(MediaPlayer mediaPlayer, int percent) {
+		Log.d(LOG_TAG, "Buffering " + percent + "%");
+
+		this.seekBar.setSecondaryProgress(percent * mediaPlayer.getDuration()
+				/ 100);
+	}
+
+	@Override
+	public boolean onError(MediaPlayer mp, int what, int extra) {
+		this.showErrorDialog("Song error : " + what);
+		return false;
+	}
+
+	@Override
+	public void onPrepared(MediaPlayer player) {
+		Log.d(LOG_TAG, "Song prepared");
+
+		this.playerService.play();
+
+		this.drawButtons(player);
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer player) {
+		Log.d(LOG_TAG, "Song completed");
+
+		this.playNext();
+
+		this.drawButtons(player);
+	}
+
+	private void drawButtons(MediaPlayer player) {
+		boolean isPlaying = player.isPlaying();
+		boolean hasNext = this.playerService.hasNext();
+		boolean hasPrevious = this.playerService.hasPrevious();
+
+		this.seekBar.setEnabled(isPlaying);
+		if (isPlaying) {
+			this.seekBar.setMax(player.getDuration());
+			this.seekBar.setProgress(player.getCurrentPosition());
+		} else {
+			this.seekBar.setMax(100);
+		}
+
+		this.playButton.setEnabled(isPlaying);
+		this.stopButton.setEnabled(isPlaying);
+		this.nextButton.setEnabled(hasNext);
+		this.previousButton.setEnabled(hasPrevious);
 	}
 
 }

@@ -45,7 +45,7 @@ public class AlbumListActivity extends
 				List<Album> albumList = new ArrayList<Album>();
 
 				JSONArray albumArray = object.getJSONArray(RemoteAction.ALBUMS
-						.getRequestParam());
+						.getRequestURI());
 
 				for (int i = 0; i < albumArray.length(); i++) {
 					albumList.add(new Album(albumArray.getJSONObject(i)));

@@ -20,7 +20,8 @@
         android:theme="@style/Wissl" >
         <activity
             android:name=".activities.LoginActivity"
-            android:label="@string/title_activity_player" >
+            android:label="@string/title_activity_player"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -29,7 +30,8 @@
         </activity>
         <activity
             android:name=".activities.player.HomeActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 
@@ -38,7 +40,8 @@
         </activity>
         <activity
             android:name=".activities.player.PlaylistActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 
@@ -47,7 +50,8 @@
         </activity>
         <activity
             android:name=".activities.player.ArtistListActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 
@@ -56,7 +60,8 @@
         </activity>
         <activity
             android:name=".activities.player.AlbumListActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 
@@ -65,7 +70,8 @@
         </activity>
         <activity
             android:name=".activities.player.SongListActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 
@@ -74,7 +80,8 @@
         </activity>
         <activity
             android:name=".activities.player.PlayingSongListActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MUSIC_PLAYER" />
 

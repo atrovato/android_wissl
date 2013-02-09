@@ -74,7 +74,7 @@ public class LoginActivity extends Activity implements
 
 		// Restore session ID or null
 		String sessionId = this.getSharedPreferences().getString(
-				RemoteAction.SESSION_ID.getRequestParam(), null);
+				RemoteAction.SESSION_ID.getRequestURI(), null);
 
 		if (sessionId != null) {
 			this.authenticate(sessionId);
@@ -90,15 +90,15 @@ public class LoginActivity extends Activity implements
 		// Restore form input values
 		EditText formEditText = (EditText) this.findViewById(R.id.txt_server);
 		formEditText.setText(this.getSharedPreferences().getString(
-				Parameters.SERVER_URL.name(), null));
+				Parameters.SERVER_URL.name(), "http://"));
 
 		formEditText = (EditText) this.findViewById(R.id.txt_username);
 		formEditText.setText(this.getSharedPreferences().getString(
-				RemoteAction.USERNAME.getRequestParam(), null));
+				RemoteAction.USERNAME.getRequestURI(), null));
 
 		formEditText = (EditText) this.findViewById(R.id.txt_password);
 		formEditText.setText(this.getSharedPreferences().getString(
-				RemoteAction.PASSWORD.getRequestParam(), null));
+				RemoteAction.PASSWORD.getRequestURI(), null));
 	}
 
 	/**
@@ -125,18 +125,18 @@ public class LoginActivity extends Activity implements
 				&& usernameValue.trim().length() > 0
 				&& passwordValue.trim().length() > 0) {
 			Map<String, String> params = new HashMap<String, String>();
-			params.put(RemoteAction.USERNAME.getRequestParam(), usernameValue);
-			params.put(RemoteAction.PASSWORD.getRequestParam(), passwordValue);
+			params.put(RemoteAction.USERNAME.getRequestURI(), usernameValue);
+			params.put(RemoteAction.PASSWORD.getRequestURI(), passwordValue);
 
 			this.post(serverUrlValue + "/" + RemoteAction.WISSL_ENTRY_POINT
-					+ "/" + RemoteAction.LOGIN.getRequestParam(), params);
+					+ "/" + RemoteAction.LOGIN.getRequestURI(), params);
 
 			SharedPreferences.Editor editor = this.getSharedPreferences()
 					.edit();
 			editor.putString(Parameters.SERVER_URL.name(), serverUrlValue);
-			editor.putString(RemoteAction.USERNAME.getRequestParam(),
+			editor.putString(RemoteAction.USERNAME.getRequestURI(),
 					usernameValue);
-			editor.putString(RemoteAction.PASSWORD.getRequestParam(),
+			editor.putString(RemoteAction.PASSWORD.getRequestURI(),
 					passwordValue);
 			editor.commit();
 		} else {
@@ -158,14 +158,14 @@ public class LoginActivity extends Activity implements
 			JSONObject json = object.getJSONObject(0);
 
 			switch (action) {
-				case LOGIN:
-					String sessionId = json.getString(RemoteAction.SESSION_ID
-							.getRequestParam());
+			case LOGIN:
+				String sessionId = json.getString(RemoteAction.SESSION_ID
+						.getRequestURI());
 
-					this.authenticate(sessionId);
-					break;
-				default:
-					break;
+				this.authenticate(sessionId);
+				break;
+			default:
+				break;
 			}
 
 		} catch (JSONException e) {
@@ -183,7 +183,7 @@ public class LoginActivity extends Activity implements
 		if (sessionId != null) {
 			SharedPreferences.Editor editor = this.getSharedPreferences()
 					.edit();
-			editor.putString(RemoteAction.SESSION_ID.getRequestParam(),
+			editor.putString(RemoteAction.SESSION_ID.getRequestURI(),
 					sessionId);
 			editor.commit();
 
