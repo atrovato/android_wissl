@@ -59,8 +59,17 @@
                 android:layout_width="50dip"
                 android:layout_height="50dip"
                 android:layout_marginLeft="5dip"
-                android:contentDescription="@string/play_pause"
+                android:contentDescription="@string/play"
                 android:src="@drawable/play" />
+            
+            <ImageButton
+                android:id="@+id/pause"
+                android:layout_width="50dip"
+                android:layout_height="50dip"
+                android:layout_marginLeft="5dip"
+                android:contentDescription="@string/pause"
+                android:visibility="gone"
+                android:src="@drawable/pause" />
 
             <ImageButton
                 android:id="@+id/stop"

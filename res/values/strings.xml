@@ -21,7 +21,8 @@
     <!-- Player -->
     <string name="add_to_playlist">Add to playlist</string>
     <string name="playing">Playing</string>
-    <string name="play_pause">Play/pause</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
     <string name="stop">Stop</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>

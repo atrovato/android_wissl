@@ -39,6 +39,7 @@ public class PlayerService extends Service {
 	private String serverUrl;
 	private String sessionId;
 	private AbstractPlayerListActivity<?, ?> client;
+	private boolean paused;
 
 	// This is the object that receives interactions from clients. See
 	// RemoteService for a more complete example.
@@ -176,6 +177,7 @@ public class PlayerService extends Service {
 		Log.d(LOG_TAG, "Stop");
 
 		this.currentPosition = 0;
+		this.paused = false;
 
 		if (this.isPlaying()) {
 			this.getPlayer().stop();
@@ -196,8 +198,13 @@ public class PlayerService extends Service {
 		return this.getPlayer().isPlaying();
 	}
 
+	public boolean isPaused() {
+		return this.paused;
+	}
+
 	public void pause() {
 		this.getPlayer().pause();
+		this.paused = true;
 	}
 
 	public void play() {
@@ -205,6 +212,7 @@ public class PlayerService extends Service {
 
 		if (!this.getPlayer().isPlaying()) {
 			this.getPlayer().start();
+			this.paused = false;
 		}
 	}
 
@@ -260,6 +268,10 @@ public class PlayerService extends Service {
 
 	public int getCurrentPosition() {
 		return this.getPlayer().getCurrentPosition();
+	}
+
+	public boolean hasSongs() {
+		return this.queue.size() > 0;
 	}
 
 }

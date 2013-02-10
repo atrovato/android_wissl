@@ -9,7 +9,7 @@
         <item name="android:layout_marginLeft">5dip</item>
         <item name="android:layout_marginTop">5dip</item>
         <item name="android:layout_marginBottom">5dip</item>
-        <item name="android:src">@drawable/no_artwork</item>
+        <item name="android:background">@drawable/no_artwork</item>
     </style>
 
     <style name="Icon" parent="@style/Artwork" />

@@ -48,6 +48,7 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.LoginActivity;
@@ -75,7 +76,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		extends ListActivity implements OnRemoteResponseListener,
 		OnItemClickListener, ServiceConnection, IPlayerServiceClient,
 		OnErrorListener, OnPreparedListener, OnCompletionListener,
-		OnClickListener, OnBufferingUpdateListener {
+		OnClickListener, OnBufferingUpdateListener, OnSeekBarChangeListener {
 
 	private final static String LOG_TAG = "MEDIA_CONTROLER";
 
@@ -91,6 +92,8 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	private ImageButton playingButton;
 	/** Play button */
 	private ImageButton playButton;
+	/** Pause button */
+	private ImageButton pauseButton;
 	/** Stop button */
 	private ImageButton stopButton;
 	/** Previous button */
@@ -185,6 +188,11 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.playButton.setOnClickListener(this);
 		this.playButton.setEnabled(false);
 
+		this.pauseButton = (ImageButton) this.findViewById(R.id.pause);
+		this.pauseButton.setOnClickListener(this);
+		this.pauseButton.setEnabled(false);
+		this.pauseButton.setVisibility(View.GONE);
+
 		this.stopButton = (ImageButton) this.findViewById(R.id.stop);
 		this.stopButton.setOnClickListener(this);
 		this.stopButton.setEnabled(false);
@@ -262,6 +270,9 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		case R.id.play:
 			this.play();
 			break;
+		case R.id.pause:
+			this.pause();
+			break;
 		case R.id.stop:
 			this.playButton.setImageResource(R.drawable.play);
 			this.stop();
@@ -277,6 +288,10 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 
 		this.drawButtons(this.playerService.getPlayer());
+	}
+
+	private void pause() {
+		this.playerService.pause();
 	}
 
 	private void getPlaylists() {
@@ -424,9 +439,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	}
 
 	public void play() {
-		if (this.playerService.isPlaying()) {
-			this.playerService.pause();
-		} else {
+		if (!this.playerService.isPlaying()) {
 			this.playerService.play();
 		}
 	}
@@ -613,6 +626,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.playerServiceBound = true;
 
 		this.playerService.setClient(this);
+		this.drawButtons(this.playerService.getPlayer());
 	}
 
 	@Override
@@ -645,7 +659,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
-		this.showErrorDialog("Song error : " + what);
+		Log.e(LOG_TAG, "Song error (" + what + ", " + extra + ")");
 		return false;
 	}
 
@@ -669,21 +683,52 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 
 	private void drawButtons(MediaPlayer player) {
 		boolean isPlaying = player.isPlaying();
+		boolean isPaused = this.playerService.isPaused();
 		boolean hasNext = this.playerService.hasNext();
 		boolean hasPrevious = this.playerService.hasPrevious();
+		boolean hasSongs = this.playerService.hasSongs();
 
-		this.seekBar.setEnabled(isPlaying);
-		if (isPlaying) {
+		this.seekBar.setEnabled(isPlaying || isPaused);
+		if (isPlaying || isPaused) {
 			this.seekBar.setMax(player.getDuration());
 			this.seekBar.setProgress(player.getCurrentPosition());
 		} else {
 			this.seekBar.setMax(100);
 		}
 
-		this.playButton.setEnabled(isPlaying);
-		this.stopButton.setEnabled(isPlaying);
+		this.playButton.setEnabled(isPaused || hasSongs);
+		this.playButton.setVisibility(isPlaying ? View.GONE : View.VISIBLE);
+
+		this.pauseButton.setEnabled(isPlaying);
+		this.pauseButton.setVisibility(isPlaying ? View.VISIBLE : View.GONE);
+
+		this.stopButton.setEnabled(isPlaying || isPaused);
+
 		this.nextButton.setEnabled(hasNext);
 		this.previousButton.setEnabled(hasPrevious);
+
+		this.playingButton.setEnabled(hasSongs);
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int pos, boolean arg2) {
+		int seekTo = seekBar.getProgress();
+		if (this.seekBar.getSecondaryProgress() > seekTo) {
+			seekBar.cancelLongPress();
+		}
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		int seekTo = seekBar.getProgress();
+		if (this.seekBar.getSecondaryProgress() > seekTo) {
+			this.playerService.seekTo(seekTo);
+		}
 	}
 
 }

@@ -3,6 +3,7 @@ package fr.trovato.wissl.android.adapters;
 import java.util.List;
 
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.player.AlbumListActivity;
@@ -23,6 +24,7 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 		TextView nbSongsView = (TextView) rowView.findViewById(R.id.nb_songs);
 		TextView durationView = (TextView) rowView.findViewById(R.id.duration);
 		TextView artistView = (TextView) rowView.findViewById(R.id.artist);
+		ImageView artworkView = (ImageView) rowView.findViewById(R.id.artwork);
 
 		albumView.setText(currentAlbum.getName());
 		yearView.setText(currentAlbum.getYear());
@@ -31,6 +33,8 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 				currentAlbum.getDuration(),
 				this.getContext().getString(R.string.unknown)));
 		artistView.setText(currentAlbum.getArtistName());
+
+		this.loadArtwork(currentAlbum.getId(), artworkView);
 	}
 
 	@Override

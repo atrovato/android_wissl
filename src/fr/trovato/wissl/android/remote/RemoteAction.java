@@ -28,6 +28,9 @@ public enum RemoteAction {
 
 	/** Artist ID */
 	ARTIST_ID("artistId"),
+	
+	/** Artwork */
+	ARTWORK("art"),
 
 	/** Playlist ID */
 	PLAYLIST_ID("playlistId"),

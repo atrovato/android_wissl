@@ -3,6 +3,7 @@ package fr.trovato.wissl.android.adapters;
 import java.util.List;
 
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.player.SongListActivity;
@@ -19,10 +20,13 @@ public class SongAdapter extends AbstractAdapter<Song> {
 		TextView titleView = (TextView) rowView.findViewById(R.id.title);
 		TextView albumView = (TextView) rowView.findViewById(R.id.album);
 		TextView artistView = (TextView) rowView.findViewById(R.id.artist);
+		ImageView artworkView = (ImageView) rowView.findViewById(R.id.artwork);
 
 		titleView.setText(currentSong.getTitle());
 		albumView.setText(currentSong.getAlbumName());
 		artistView.setText(currentSong.getArtistName());
+		
+		this.loadArtwork(currentSong.getAlbumId(), artworkView);
 	}
 
 	@Override

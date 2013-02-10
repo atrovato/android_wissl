@@ -20,15 +20,15 @@ public class SongListActivity extends
 		Intent intent = this.getIntent();
 
 		if (intent != null) {
-			int albumId = intent.getIntExtra(RemoteAction.ALBUM_ID.name(), -1);
-			int playlistId = intent.getIntExtra(
+			Integer albumId = intent.getIntExtra(RemoteAction.ALBUM_ID.name(),
+					-1);
+			Integer playlistId = intent.getIntExtra(
 					RemoteAction.PLAYLIST_ID.name(), -1);
 
 			if (albumId >= 0) {
 				this.get(RemoteAction.SONGS, String.valueOf(albumId));
 			} else if (playlistId >= 0) {
-				this.get(RemoteAction.PLAYLIST, String.valueOf(playlistId)
-						+ "/songs");
+				this.get(RemoteAction.PLAYLIST, playlistId + "/songs");
 			}
 		}
 	}
@@ -41,7 +41,8 @@ public class SongListActivity extends
 			this.addSongs(object.getJSONArray("songs"));
 			break;
 		case PLAYLIST:
-			List<Song> songList = this.addSongs(object.getJSONArray("playlist"));
+			List<Song> songList = this
+					.addSongs(object.getJSONArray("playlist"));
 			super.addSongs(songList);
 			break;
 		}
@@ -57,7 +58,7 @@ public class SongListActivity extends
 			this.getWisslAdapter().add(song);
 			songList.add(song);
 		}
-		
+
 		return songList;
 	}
 
