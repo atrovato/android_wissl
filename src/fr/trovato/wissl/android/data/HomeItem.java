@@ -1,5 +1,6 @@
 package fr.trovato.wissl.android.data;
 
+
 public class HomeItem {
 
 	private int icon;

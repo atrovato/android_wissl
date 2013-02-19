@@ -11,6 +11,12 @@ import fr.trovato.wissl.commons.data.Album;
 import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.utils.FormatUtil;
 
+/**
+ * Graphic adapter to manage a list of albums
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class AlbumAdapter extends AbstractAdapter<Album> {
 
 	public AlbumAdapter(AlbumListActivity context, List<Album> objects) {
@@ -43,7 +49,7 @@ public class AlbumAdapter extends AbstractAdapter<Album> {
 	}
 
 	@Override
-	protected boolean isPlaying(Song playingSong, Album currentEntity) {
+	public boolean isPlaying(Song playingSong, Album currentEntity) {
 		return currentEntity.getId() == playingSong.getAlbumId();
 	}
 }

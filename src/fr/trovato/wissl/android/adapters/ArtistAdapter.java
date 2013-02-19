@@ -53,16 +53,14 @@ public class ArtistAdapter extends AbstractAdapter<Artist> {
 				this.getContext().getString(R.string.unknown)));
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	@Override
 	protected int getLayoutId() {
 		return R.layout.artist_item;
 	}
 
 	@Override
-	protected boolean isPlaying(Song playingSong, Artist currentEntity) {
+	public boolean isPlaying(Song playingSong, Artist currentEntity) {
 		return currentEntity.getId() == playingSong.getArtistId();
 	}
+
 }

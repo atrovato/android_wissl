@@ -9,6 +9,12 @@ import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.player.SongListActivity;
 import fr.trovato.wissl.commons.data.Song;
 
+/**
+ * Graphic adapter to manage a list of songs
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class SongAdapter extends AbstractAdapter<Song> {
 
 	public SongAdapter(SongListActivity context, List<Song> objects) {
@@ -25,7 +31,7 @@ public class SongAdapter extends AbstractAdapter<Song> {
 		titleView.setText(currentSong.getTitle());
 		albumView.setText(currentSong.getAlbumName());
 		artistView.setText(currentSong.getArtistName());
-		
+
 		this.loadArtwork(currentSong.getAlbumId(), artworkView);
 	}
 
@@ -35,7 +41,7 @@ public class SongAdapter extends AbstractAdapter<Song> {
 	}
 
 	@Override
-	protected boolean isPlaying(Song playingSong, Song currentEntity) {
+	public boolean isPlaying(Song playingSong, Song currentEntity) {
 		return currentEntity.getId() == playingSong.getId();
 	}
 

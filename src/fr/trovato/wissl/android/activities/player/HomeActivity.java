@@ -16,6 +16,12 @@ import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
 
+/**
+ * Activity listing all action available, menu activity.
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class HomeActivity extends
 		AbstractPlayerListActivity<HomeItem, HomeAdapter> {
 
@@ -40,7 +46,13 @@ public class HomeActivity extends
 		}
 	}
 
-	protected void playRandom(Playlist entity) {
+	/**
+	 * Start playing random
+	 * 
+	 * @param entity
+	 *            playlist entity
+	 */
+	private void playRandom(Playlist entity) {
 		Intent intent = new Intent(this, SongListActivity.class);
 		intent.putExtra(RemoteAction.PLAYLIST_ID.name(), entity.getId());
 		this.startActivityIfNeeded(intent, 0);
@@ -75,6 +87,11 @@ public class HomeActivity extends
 	@Override
 	protected void loadEntities() {
 		this.stopWaiting();
+	}
+
+	@Override
+	public void setPlayingSong(Song song) {
+
 	}
 
 }

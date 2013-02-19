@@ -12,6 +12,12 @@ import fr.trovato.wissl.android.adapters.SongAdapter;
 import fr.trovato.wissl.android.remote.RemoteAction;
 import fr.trovato.wissl.commons.data.Song;
 
+/**
+ * Activity listing songs
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class SongListActivity extends
 		AbstractPlayerListActivity<Song, SongAdapter> {
 
@@ -38,18 +44,27 @@ public class SongListActivity extends
 			throws JSONException {
 		switch (action) {
 		case SONGS:
-			this.addSongs(object.getJSONArray("songs"));
+			this.transformSongs(object.getJSONArray("songs"));
 			break;
 		case PLAYLIST:
-			List<Song> songList = this
-					.addSongs(object.getJSONArray("playlist"));
+			List<Song> songList = this.transformSongs(object
+					.getJSONArray("playlist"));
 			super.addSongs(songList);
 			break;
 		}
 
 	}
 
-	private List<Song> addSongs(JSONArray songArray) throws JSONException {
+	/**
+	 * Add new songs to list
+	 * 
+	 * @param songArray
+	 *            songs from server
+	 * @return list of all songs
+	 * @throws JSONException
+	 *             error during transformation
+	 */
+	private List<Song> transformSongs(JSONArray songArray) throws JSONException {
 		this.getWisslAdapter().clear();
 		List<Song> songList = new ArrayList<Song>();
 
@@ -76,7 +91,21 @@ public class SongListActivity extends
 	protected void nextPage(Song song) {
 		this.stop();
 		this.clearPlaying();
-		this.addSong(song);
+
+		int nbSongs = this.getListAdapter().getCount();
+		int position = 0;
+		List<Song> songList = new ArrayList<Song>();
+
+		for (int i = 0; i < nbSongs; i++) {
+			songList.add((Song) this.getListAdapter().getItem(i));
+
+			if (song.equals(songList.get(i))) {
+				position = i;
+			}
+		}
+
+		super.addSongs(songList);
+		this.play(position);
 	}
 
 }

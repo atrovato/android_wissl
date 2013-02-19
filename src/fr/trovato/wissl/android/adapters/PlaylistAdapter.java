@@ -10,6 +10,12 @@ import fr.trovato.wissl.commons.data.Playlist;
 import fr.trovato.wissl.commons.data.Song;
 import fr.trovato.wissl.commons.utils.FormatUtil;
 
+/**
+ * Graphic adapter to manage a list of playlists
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
 public class PlaylistAdapter extends AbstractAdapter<Playlist> {
 
 	public PlaylistAdapter(PlaylistActivity context, List<Playlist> objects) {
@@ -35,7 +41,8 @@ public class PlaylistAdapter extends AbstractAdapter<Playlist> {
 	}
 
 	@Override
-	protected boolean isPlaying(Song playingSong, Playlist currentEntity) {
+	public boolean isPlaying(Song playingSong, Playlist currentEntity) {
 		return false;
 	}
+
 }

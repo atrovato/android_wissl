@@ -2,34 +2,40 @@ package fr.trovato.wissl.android.adapters;
 
 import java.util.List;
 
-import android.content.Context;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import fr.trovato.wissl.android.R;
+import fr.trovato.wissl.android.activities.player.HomeActivity;
 import fr.trovato.wissl.android.data.HomeItem;
+import fr.trovato.wissl.commons.data.Song;
 
-public class HomeAdapter extends ArrayAdapter<HomeItem> {
+/**
+ * Graphic adapter to manage a list of home menu
+ * 
+ * @author alexandre.trovato@gmail.com
+ * 
+ */
+public class HomeAdapter extends AbstractAdapter<HomeItem> {
 
-	public HomeAdapter(Context context, List<HomeItem> objects) {
+	public HomeAdapter(HomeActivity context, List<HomeItem> objects) {
 		super(context, R.layout.home_item, objects);
+		this.setSelectable(false);
 	}
-	
+
 	@Override
-	public final View getView(int position, View convertView, ViewGroup parent) {
-		LayoutInflater inflater = (LayoutInflater) this.getContext()
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+	public boolean isPlaying(Song playingSong, HomeItem currentEntity) {
+		return false;
+	}
 
-		View rowView = inflater.inflate(R.layout.home_item, parent, false);
-
-		HomeItem currentItem = this.getItem(position);
-
+	@Override
+	protected void completeView(HomeItem currentEntity, View rowView) {
 		TextView textView = (TextView) rowView.findViewById(R.id.text);
-		textView.setText(currentItem.getText());
-		
-		return rowView;
+		textView.setText(currentEntity.getText());
+	}
+
+	@Override
+	protected int getLayoutId() {
+		return R.layout.home_item;
 	}
 
 }

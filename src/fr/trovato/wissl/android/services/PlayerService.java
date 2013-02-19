@@ -64,11 +64,15 @@ public class PlayerService extends Service {
 		player.setOnBufferingUpdateListener(this.client);
 	}
 
+	/**
+	 * Get used MediaPlayer to play songs
+	 * 
+	 * @return used MediaPlayer
+	 */
 	public MediaPlayer getPlayer() {
 		return this.player;
 	}
 
-	/** Called when the activity is first created. */
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -95,6 +99,12 @@ public class PlayerService extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		return this.binder;
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		this.setClient(null);
+		return super.onUnbind(intent);
 	}
 
 	public void clear() {
@@ -135,53 +145,63 @@ public class PlayerService extends Service {
 		this.player = null;
 	}
 
-	private void playSong() throws IllegalArgumentException, SecurityException,
-			IllegalStateException, IOException {
-		Log.d(LOG_TAG, "Play song");
+	/**
+	 * Play the song at the current position or stop media player if the
+	 * position is invalid
+	 * 
+	 * @throws IllegalStateException
+	 *             if it is called in an invalid state
+	 * @throws IOException
+	 *             if song cannot be read
+	 */
+	private void playSong() throws IllegalStateException, IOException {
+		// Song list is not empty and playing is in range
+		if (this.hasSongs() && this.currentPosition <= this.queue.size()) {
 
-		if (this.currentPosition >= 0 && this.queue.size() > 0
-				&& this.currentPosition < this.queue.size()) {
 			Song song = this.queue.get(this.currentPosition);
 
-			Log.d(LOG_TAG, "Play song " + this.currentPosition);
-
-			String uri = this.buildUri(song);
-			Log.d(this.getClass().getSimpleName(),
-					"Streaming " + uri.toString());
+			String url = this.buildStreamingURL(song);
+			Log.d(LOG_TAG, "Streaming song (" + this.currentPosition + ") "
+					+ url.toString());
 
 			this.getPlayer().reset();
-			this.getPlayer().setDataSource(uri);
+			this.getPlayer().setDataSource(url);
 			this.getPlayer().setAudioStreamType(AudioManager.STREAM_MUSIC);
-			this.getPlayer().prepareAsync();
+			this.getPlayer().prepare();
+
+			this.client.setPlayingSong(song);
 		} else {
 			this.stop();
 		}
 	}
 
-	private String buildUri(Song song) {
+	/**
+	 * Build URL for song streaming
+	 * 
+	 * @param song
+	 *            song to load
+	 * @return song streaming URL
+	 */
+	private String buildStreamingURL(Song song) {
 		return this.serverUrl + "/song/" + song.getId() + "/stream?sessionId="
 				+ this.sessionId;
 	}
 
-	public void playNext() throws IllegalArgumentException, SecurityException,
-			IllegalStateException, IOException {
-		Log.d(LOG_TAG, "Play next");
+	/**
+	 * Play next song
+	 * 
+	 * @throws IllegalStateException
+	 *             if it is called in an invalid state
+	 * @throws IOException
+	 *             if song cannot be read
+	 */
+	public void playNext() throws IllegalStateException, IOException {
+		Log.d(LOG_TAG, "Play next song");
 
 		this.stop();
 		this.currentPosition++;
 
 		this.playSong();
-	}
-
-	public void stop() {
-		Log.d(LOG_TAG, "Stop");
-
-		this.currentPosition = 0;
-		this.paused = false;
-
-		if (this.isPlaying()) {
-			this.getPlayer().stop();
-		}
 	}
 
 	public void playPrevious() throws IllegalStateException,
@@ -194,6 +214,30 @@ public class PlayerService extends Service {
 		this.playSong();
 	}
 
+	/**
+	 * Stop playing song and reset position
+	 */
+	public void stop() {
+		this.paused = false;
+
+		if (this.isPlaying()) {
+			Log.d(LOG_TAG, "Stop");
+
+			this.currentPosition = 0;
+
+			this.getPlayer().stop();
+
+			if (this.client != null) {
+				this.client.setPlayingSong(null);
+			}
+		}
+	}
+
+	/**
+	 * Checks whether the MediaPlayer is playing
+	 * 
+	 * @return <code>true</code> if playing, <code>false</code> otherwise
+	 */
 	public boolean isPlaying() {
 		return this.getPlayer().isPlaying();
 	}

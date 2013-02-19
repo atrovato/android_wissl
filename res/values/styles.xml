@@ -3,12 +3,10 @@
 
     <style name="Artwork">
         <item name="android:id">@+id/artwork</item>
-        <item name="android:layout_width">45dip</item>
-        <item name="android:layout_height">45dip</item>
+        <item name="android:layout_width">55dip</item>
+        <item name="android:layout_height">55dip</item>
         <item name="android:layout_marginRight">10dip</item>
         <item name="android:layout_marginLeft">5dip</item>
-        <item name="android:layout_marginTop">5dip</item>
-        <item name="android:layout_marginBottom">5dip</item>
         <item name="android:background">@drawable/no_artwork</item>
     </style>
 

@@ -62,4 +62,10 @@ public class PlaylistActivity extends
 		return new PlaylistAdapter(this, new ArrayList<Playlist>());
 	}
 
+	@Override
+	public void setPlayingSong(Song song) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

@@ -8,6 +8,8 @@
     <string name="title_activity_main">Wissl</string>
     <string name="no_connection">Network is disabled.</string>
     <string name="ok">OK</string>
+    <!-- Menu -->
+    <string name="quit">Quitter</string>
     <!-- Login -->
     <string name="server_url">Server URL</string>
     <string name="server_url_http">http://</string>

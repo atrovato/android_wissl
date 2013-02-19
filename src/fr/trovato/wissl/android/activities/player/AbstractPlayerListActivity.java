@@ -29,6 +29,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -39,11 +40,13 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -52,6 +55,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 import fr.trovato.wissl.android.R;
 import fr.trovato.wissl.android.activities.LoginActivity;
+import fr.trovato.wissl.android.adapters.AbstractAdapter;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.Parameters;
 import fr.trovato.wissl.android.remote.RemoteAction;
@@ -72,7 +76,7 @@ import fr.trovato.wissl.commons.data.Song;
  * @param <ADAPTER>
  *            Adapter used to display entities
  */
-public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAdapter<ENTITY>>
+public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends AbstractAdapter<ENTITY>>
 		extends ListActivity implements OnRemoteResponseListener,
 		OnItemClickListener, ServiceConnection, IPlayerServiceClient,
 		OnErrorListener, OnPreparedListener, OnCompletionListener,
@@ -86,16 +90,10 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	/** Background service playing music enable flag */
 	private boolean playerServiceBound = false;
 
-	/** Add to playlist button */
-	private ImageButton addToPlaylistButton;
-	/** Playing playlist button */
-	private ImageButton playingButton;
 	/** Play button */
 	private ImageButton playButton;
 	/** Pause button */
 	private ImageButton pauseButton;
-	/** Stop button */
-	private ImageButton stopButton;
 	/** Previous button */
 	private ImageButton previousButton;
 	/** Next button */
@@ -124,6 +122,8 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	private AlertDialog playlistDialog;
 
 	private PlayerService playerService;
+
+	private Song playingSong;
 
 	/**
 	 * Load settings and prepare player interface
@@ -172,18 +172,15 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 
 		this.initializePlayer();
+
+	}
+
+	public void onResume() {
+		this.getListView().invalidate();
+		super.onResume();
 	}
 
 	private void initializePlayer() {
-		this.addToPlaylistButton = (ImageButton) this
-				.findViewById(R.id.add_to_playlist);
-		this.addToPlaylistButton.setOnClickListener(this);
-		this.addToPlaylistButton.setEnabled(!this.selectedItems.isEmpty());
-
-		this.playingButton = (ImageButton) this.findViewById(R.id.playing);
-		this.playingButton.setOnClickListener(this);
-		this.playingButton.setEnabled(false);
-
 		this.playButton = (ImageButton) this.findViewById(R.id.play);
 		this.playButton.setOnClickListener(this);
 		this.playButton.setEnabled(false);
@@ -192,10 +189,6 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.pauseButton.setOnClickListener(this);
 		this.pauseButton.setEnabled(false);
 		this.pauseButton.setVisibility(View.GONE);
-
-		this.stopButton = (ImageButton) this.findViewById(R.id.stop);
-		this.stopButton.setOnClickListener(this);
-		this.stopButton.setEnabled(false);
 
 		this.nextButton = (ImageButton) this.findViewById(R.id.next);
 		this.nextButton.setOnClickListener(this);
@@ -220,12 +213,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	protected void onStart() {
 		super.onStart();
 
-		Intent playerIntent = new Intent(this, PlayerService.class);
-		playerIntent.putExtra(PlayerService.SERVER_URL, this.getServerUrl());
-		playerIntent.putExtra(PlayerService.SESSION_ID, this.getSessionId());
-
 		Intent intent = new Intent(this, PlayerService.class);
-
 		bindService(intent, this, Context.BIND_AUTO_CREATE);
 	}
 
@@ -261,21 +249,11 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 	@Override
 	public void onClick(View view) {
 		switch (view.getId()) {
-		case R.id.add_to_playlist:
-			this.getPlaylists();
-			break;
-		case R.id.playing:
-			this.showPlaying();
-			break;
 		case R.id.play:
 			this.play();
 			break;
 		case R.id.pause:
 			this.pause();
-			break;
-		case R.id.stop:
-			this.playButton.setImageResource(R.drawable.play);
-			this.stop();
 			break;
 		case R.id.next:
 			this.playNext();
@@ -294,10 +272,9 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.playerService.pause();
 	}
 
-	private void getPlaylists() {
-		new RemoteTask(RemoteAction.LOAD_PLAYLISTS, null);
-	}
-
+	/**
+	 * Add selected songs to current playing list
+	 */
 	protected void addSelectedToPlaylist() {
 		int nbAdded = 0;
 
@@ -458,9 +435,24 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 	}
 
-	public void addSong(Song song) {
+	/**
+	 * Get the binded player service
+	 * 
+	 * @return the binded player service, or <code>null</code> if not binded
+	 */
+	protected PlayerService getPlayerService() {
+		return this.playerService;
+	}
+
+	/**
+	 * This method allow to add a song to the player service song list
+	 * 
+	 * @param song
+	 *            song to add
+	 */
+	protected void addSong(Song song) {
 		try {
-			this.playerService.add(song);
+			this.getPlayerService().add(song);
 		} catch (IllegalArgumentException e) {
 			this.showErrorDialog(e.getMessage());
 		} catch (SecurityException e) {
@@ -472,7 +464,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		}
 	}
 
-	public void addSongs(List<Song> songList) {
+	protected void addSongs(List<Song> songList) {
 		try {
 			this.playerService.addAll(songList);
 		} catch (IllegalArgumentException e) {
@@ -611,8 +603,6 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		} else {
 			this.selectedItems.remove(entity);
 		}
-
-		this.addToPlaylistButton.setEnabled(!this.selectedItems.isEmpty());
 	}
 
 	protected List<ENTITY> getSelectedItems() {
@@ -702,12 +692,8 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		this.pauseButton.setEnabled(isPlaying);
 		this.pauseButton.setVisibility(isPlaying ? View.VISIBLE : View.GONE);
 
-		this.stopButton.setEnabled(isPlaying || isPaused);
-
 		this.nextButton.setEnabled(hasNext);
 		this.previousButton.setEnabled(hasPrevious);
-
-		this.playingButton.setEnabled(hasSongs);
 	}
 
 	@Override
@@ -728,6 +714,57 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends ArrayAd
 		int seekTo = seekBar.getProgress();
 		if (this.seekBar.getSecondaryProgress() > seekTo) {
 			this.playerService.seekTo(seekTo);
+		}
+	}
+
+	public void setPlayingSong(Song song) {
+		this.setSelectedSong(this.playingSong, false);
+		this.setSelectedSong(song, true);
+
+		this.playingSong = song;
+	}
+
+	private void setSelectedSong(Song song, boolean select) {
+		if (song != null) {
+			int nbItems = this.getWisslAdapter().getCount();
+
+			for (int i = 0; i < nbItems; i++) {
+				if (this.getWisslAdapter().isPlaying(song,
+						this.getWisslAdapter().getItem(i))) {
+					this.setSelectedItem(i, select);
+					break;
+				}
+			}
+		}
+	}
+
+	private void setSelectedItem(int position, boolean select) {
+		int color = Color.TRANSPARENT;
+
+		if (select) {
+			// FIXME selected song background : GREEN
+			color = Color.GREEN;
+			this.getListView().setSelection(position);
+		}
+		// this.getListView().getChildAt(position).setBackgroundColor(color);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main_menu, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.quit:
+			this.shutdownActivity();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
 		}
 	}
 
