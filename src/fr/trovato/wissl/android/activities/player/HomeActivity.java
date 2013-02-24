@@ -86,7 +86,7 @@ public class HomeActivity extends
 
 	@Override
 	protected void loadEntities() {
-		this.stopWaiting();
+		this.hideWaiting();
 	}
 
 	@Override

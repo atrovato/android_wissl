@@ -59,7 +59,6 @@ import fr.trovato.wissl.android.adapters.AbstractAdapter;
 import fr.trovato.wissl.android.listeners.OnRemoteResponseListener;
 import fr.trovato.wissl.android.remote.Parameters;
 import fr.trovato.wissl.android.remote.RemoteAction;
-import fr.trovato.wissl.android.services.IPlayerServiceClient;
 import fr.trovato.wissl.android.services.PlayerService;
 import fr.trovato.wissl.android.services.PlayerService.PlayerBinder;
 import fr.trovato.wissl.android.tasks.RemoteTask;
@@ -78,9 +77,9 @@ import fr.trovato.wissl.commons.data.Song;
  */
 public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends AbstractAdapter<ENTITY>>
 		extends ListActivity implements OnRemoteResponseListener,
-		OnItemClickListener, ServiceConnection, IPlayerServiceClient,
-		OnErrorListener, OnPreparedListener, OnCompletionListener,
-		OnClickListener, OnBufferingUpdateListener, OnSeekBarChangeListener {
+		OnItemClickListener, ServiceConnection, OnErrorListener,
+		OnPreparedListener, OnCompletionListener, OnClickListener,
+		OnBufferingUpdateListener, OnSeekBarChangeListener {
 
 	private final static String LOG_TAG = "MEDIA_CONTROLER";
 
@@ -132,13 +131,9 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends Abstrac
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		this.showWaiting();
+		
 		this.enableHttpResponseCache();
-
-		this.dialog = new ProgressDialog(this);
-		this.dialog.setMessage("Loading...");
-		this.dialog.setIndeterminate(true);
-		this.dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		this.dialog.show();
 
 		// Restore preferences
 		this.settings = this.getSharedPreferences(Parameters.PREFS_NAME.name(),
@@ -575,7 +570,7 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends Abstrac
 				}
 			}
 
-			this.stopWaiting();
+			this.hideWaiting();
 		} catch (JSONException e) {
 			this.showErrorDialog(e.getMessage());
 		}
@@ -624,7 +619,18 @@ public abstract class AbstractPlayerListActivity<ENTITY, ADAPTER extends Abstrac
 		this.playerServiceBound = false;
 	}
 
-	protected void stopWaiting() {
+	protected void showWaiting() {
+		if (this.dialog == null) {
+			this.dialog = new ProgressDialog(this);
+			this.dialog.setMessage("Loading...");
+			this.dialog.setIndeterminate(true);
+			this.dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		}
+
+		this.dialog.show();
+	}
+
+	protected void hideWaiting() {
 		this.dialog.dismiss();
 	}
 

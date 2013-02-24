@@ -3,7 +3,6 @@ package fr.trovato.wissl.android.adapters;
 import java.util.List;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,11 +66,7 @@ public abstract class AbstractAdapter<ENTITY> extends ArrayAdapter<ENTITY> {
 	}
 
 	protected void loadArtwork(int albumId, ImageView view) {
-		Bitmap artwork = CacheStore.getInstance().getArtowrk(albumId);
-
-		if (artwork != null) {
-			view.setImageBitmap(artwork);
-		}
+		CacheStore.getInstance(this.getContext()).showArtwork(albumId, view);
 	}
 	
 }

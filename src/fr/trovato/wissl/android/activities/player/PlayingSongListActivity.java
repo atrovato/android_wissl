@@ -37,7 +37,7 @@ public class PlayingSongListActivity extends SongListActivity {
 
 		this.bound = true;
 		this.updateSongList();
-		this.stopWaiting();
+		this.hideWaiting();
 	}
 
 	@Override

@@ -34,6 +34,7 @@ public class SongListActivity extends
 			if (albumId >= 0) {
 				this.get(RemoteAction.SONGS, String.valueOf(albumId));
 			} else if (playlistId >= 0) {
+				this.showWaiting();
 				this.get(RemoteAction.PLAYLIST, playlistId + "/songs");
 			}
 		}
